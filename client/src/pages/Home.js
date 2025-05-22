@@ -119,16 +119,17 @@ const Home = () => {
               title="Share Securely"
               description="Control what you share and with whom, using selective disclosure."
             />
-            <StepCard 
+            <StepCard
               number="4"
-              title="Share Securely"
-              description="Control what you share and with whom, using selective disclosure."
+              title="Verify Credentials"
+              description="Allow others to verify your credentials securely and efficiently."
             />
-            <StepCard 
+            <StepCard
               number="5"
-              title="Share Securely"
-              description="Control what you share and with whom, using selective disclosure."
+              title="Manage Your Wallet"
+              description="Easily manage your digital credentials and identity within your secure wallet."
             />
+
           </div>
         </div>
       </div>

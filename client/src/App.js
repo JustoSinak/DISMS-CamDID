@@ -1,24 +1,51 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Dashboard from './components/dashboard/Dashboard';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* Add other routes like /dashboard etc. when needed */}
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Add other routes like /dashboard etc. when needed */}
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
 export default App;
 
+// import React from 'react';
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import Home from './components/Home';
+// import Login from './components/auth/Login';
+// import Register from './components/auth/Register';
+// 
+
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/" element={<Home />} />
+//         <Route path="/login" element={<Login />} />
+//         <Route path="/register" element={<Register />} />
+//         <Route path="/dashboard" element={<Dashboard />} />
+//         {/* Add more routes as needed */}
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// export default App;
 
 
 // import React from 'react';

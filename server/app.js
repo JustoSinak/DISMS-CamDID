@@ -8,6 +8,8 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 
+const adminRoutes = require('./routes/admin');
+
 // Import middleware
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -46,6 +48,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev'
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

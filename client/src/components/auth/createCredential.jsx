@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
-const Register = () => {
+const Credential = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    nationalId: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    phoneNumber: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
 
   const { register, loading, error, isAuthenticated, clearError } = useAuth();
   const navigate = useNavigate();
@@ -47,9 +51,11 @@ const Register = () => {
   const validateForm = () => {
     const errors = {};
 
-    // Name validation
-    if (!formData.name) {
-      errors.name = 'Name is required';
+    // National ID validation
+    if (!formData.nationalId) {
+      errors.nationalId = 'National ID is required';
+    } else if (formData.nationalId.length < 8) {
+      errors.nationalId = 'National ID must be at least 8 characters';
     }
 
     // Email validation
@@ -75,6 +81,21 @@ const Register = () => {
       errors.confirmPassword = 'Passwords do not match';
     }
 
+    // Name validation
+    if (!formData.firstName) {
+      errors.firstName = 'First name is required';
+    }
+    if (!formData.lastName) {
+      errors.lastName = 'Last name is required';
+    }
+
+    // Phone validation (Cameroon format)
+    if (!formData.phoneNumber) {
+      errors.phoneNumber = 'Phone number is required';
+    } else if (!/^(\+237|237)?[0-9]{8,9}$/.test(formData.phoneNumber)) {
+      errors.phoneNumber = 'Invalid Cameroon phone number';
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -93,7 +114,7 @@ const Register = () => {
     try {
       const result = await register(registrationData);
       if (result && result.success) {
-        setSuccess('You successfully register! Redirecting to login...');
+        setSuccess('Registration Successful! Redirecting to login...');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
@@ -133,25 +154,69 @@ const Register = () => {
           )}
 
           <div className="space-y-4">
-            {/* Name */}
+            {/* National ID */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name *
+              <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700">
+                National ID *
               </label>
               <input
-                id="name"
-                name="name"
+                id="nationalId"
+                name="nationalId"
                 type="text"
                 required
                 className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                  formErrors.name ? 'border-red-500' : 'border-gray-300'
+                  formErrors.nationalId ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter your name"
-                value={formData.name}
+                placeholder="Enter your National ID"
+                value={formData.nationalId}
                 onChange={handleChange}
               />
-              {formErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+              {formErrors.nationalId && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.nationalId}</p>
+              )}
+            </div>
+
+            {/* First Name */}
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                First Name *
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your first name"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+              {formErrors.firstName && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.firstName}</p>
+              )}
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                Last Name *
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  formErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your last name"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+              {formErrors.lastName && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.lastName}</p>
               )}
             </div>
 
@@ -174,6 +239,28 @@ const Register = () => {
               />
               {formErrors.email && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Phone Number *
+              </label>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                required
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="e.g., +237123456789 or 123456789"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+              />
+              {formErrors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
               )}
             </div>
 
@@ -256,4 +343,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Credential;

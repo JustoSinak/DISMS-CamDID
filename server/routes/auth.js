@@ -7,48 +7,31 @@ const router = express.Router();
 
 // Validation middleware for registration
 const validateRegistration = [
-  body('nationalId')
-    .isLength({ min: 8, max: 20 })
-    .withMessage('National ID must be between 8 and 20 characters')
-    .matches(/^[0-9A-Za-z]+$/)
-    .withMessage('National ID can only contain letters and numbers'),
-  
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Name must be between 2 and 100 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('Name can only contain letters and spaces'),
+
   body('email')
     .isEmail()
     .normalizeEmail()
     .withMessage('Please provide a valid email address'),
-  
+
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  
-  body('firstName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('First name can only contain letters and spaces'),
-  
-  body('lastName')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
-  
-  body('phoneNumber')
-    .matches(/^(\+237|237)?[0-9]{8,9}$/)
-    .withMessage('Please provide a valid Cameroon phone number')
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
 ];
 
 // Validation middleware for login
 const validateLogin = [
-  body('nationalId')
+  body('email')
     .notEmpty()
-    .withMessage('National ID is required'),
-  
+    .withMessage('Email is required'),
+
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -70,12 +53,29 @@ const handleValidationErrors = (req, res, next) => {
 // @route   POST /api/auth/register
 // @desc    Register new user
 // @access  Public
-router.post('/register', validateRegistration, handleValidationErrors, authController.register);
+router.post(
+  '/register',
+  validateRegistration,
+  handleValidationErrors,
+  authController.register
+);
 
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', validateLogin, handleValidationErrors, authController.login);
+router.post(
+  '/login',
+  validateLogin,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      // ... login logic ...
+      return res.json({ success: true, user, token });
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+  }
+);
 
 // @route   GET /api/auth/profile
 // @desc    Get current user profile
@@ -105,3 +105,4 @@ router.get('/verify-token', authenticateToken, (req, res) => {
 });
 
 module.exports = router;
+

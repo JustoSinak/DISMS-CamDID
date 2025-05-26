@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from '../services/api';
 
 import { motion } from 'framer-motion';
 
@@ -71,11 +72,20 @@ const Register = () => {
     e.preventDefault();
     if (step === 2 && validateStep2()) {
       setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        alert('Registration successful!');
-        navigate('/login');
-      }, 1000);
+        api.post('/auth/register', {
+          name: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+        })
+        .then(() => {
+          setLoading(false);
+          alert('Registration successful!');
+          navigate('/login');
+        })
+        .catch((err) => {
+          setLoading(false);
+          alert(err.response?.data?.message || 'Registration failed');
+        });
     }
   };
 

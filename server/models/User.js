@@ -41,13 +41,6 @@ const userSchema = new mongoose.Schema({
     maxlength: 50
   },
   
-  phoneNumber: {
-    type: String,
-    required: true,
-    trim: true,
-    match: [/^(\+237|237)?[0-9]{8,9}$/, 'Please enter a valid Cameroon phone number']
-  },
-  
   // Verification Status
   isVerified: {
     type: Boolean,
@@ -122,13 +115,12 @@ const userSchema = new mongoose.Schema({
 // Index for faster queries
 userSchema.index({ nationalId: 1 });
 userSchema.index({ email: 1 });
-userSchema.index({ phoneNumber: 1 });
 
 // Pre-save middleware to calculate profile completion
 userSchema.pre('save', function(next) {
   let completion = 0;
   const requiredFields = [
-    'nationalId', 'email', 'firstName', 'lastName', 'phoneNumber'
+    'nationalId', 'email', 'firstName', 'lastName'
   ];
   
   requiredFields.forEach(field => {

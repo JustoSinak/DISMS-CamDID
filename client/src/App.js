@@ -5,6 +5,8 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import AdminRoute from './components/common/AdminRoute';
 
 function App() {
   return (
@@ -14,7 +16,17 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          {/* Example admin route: */}
+          {/* <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } /> */}
           {/* Add other routes like /dashboard etc. when needed */}
         </Routes>
       </Router>

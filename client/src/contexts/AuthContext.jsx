@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import api from '../services/api';
+import axios from 'axios';
 
 // Initial state
 const initialState = {
@@ -121,48 +122,38 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register user
-  const register = async (userData) => {
-    dispatch({ type: AUTH_ACTIONS.REGISTER_START });
+  const register = async (registrationData) => {
     try {
-      const response = await api.post('/auth/register', userData);
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_SUCCESS,
-        payload: {
-          user: response.data.user,
-          token: response.data.token
-        }
-      });
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_FAILURE,
-        payload: errorMessage
-      });
-      return { success: false, message: errorMessage };
+      const res = await axios.post('/api/auth/register', registrationData);
+      if (res.data.success) {
+        // Do NOT dispatch REGISTER_SUCCESS if you want to redirect to login
+        return { success: true, message: res.data.message };
+      } else {
+        return { success: false, message: res.data.message || 'Registration failed' };
+      }
+    } catch (err) {
+      return { success: false, message: err.response?.data?.message || err.message };
     }
   };
 
   // Login user
-  const login = async (credentials) => {
-    dispatch({ type: AUTH_ACTIONS.LOGIN_START });
+  const login = async (loginData) => {
     try {
-      const response = await api.post('/auth/login', credentials);
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_SUCCESS,
-        payload: {
-          user: response.data.user,
-          token: response.data.token
-        }
-      });
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_FAILURE,
-        payload: errorMessage
-      });
-      return { success: false, message: errorMessage };
+      const res = await axios.post('/api/auth/login', loginData);
+      if (res.data.success) {
+        dispatch({
+          type: AUTH_ACTIONS.LOGIN_SUCCESS,
+          payload: {
+            user: res.data.user,
+            token: res.data.token
+          }
+        });
+        return { success: true, message: res.data.message };
+      } else {
+        return { success: false, message: res.data.message || 'Login failed' };
+      }
+    } catch (err) {
+      return { success: false, message: err.response?.data?.message || err.message };
     }
   };
 

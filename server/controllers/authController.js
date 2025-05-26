@@ -2,35 +2,30 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Register new user with government ID
+// Register new user with name and email
 const register = async (req, res) => {
   try {
     const { 
-      nationalId, 
+      name, 
       email, 
-      password, 
-      firstName, 
-      lastName, 
-      phoneNumber 
+      password
     } = req.body;
 
     // Basic validation
-    if (!nationalId || !email || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'National ID, email, and password are required'
+        message: 'Name, email, and password are required'
       });
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { nationalId }] 
-    });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email or National ID already exists'
+        message: 'User with this email already exists'
       });
     }
 
@@ -38,14 +33,18 @@ const register = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Parse name into firstName and lastName (simple split)
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
     // Create new user
     const newUser = new User({
-      nationalId,
-      email,
-      password: hashedPassword,
+      name,
       firstName,
       lastName,
-      phoneNumber,
+      email,
+      password: hashedPassword,
       isVerified: false, // Will be verified later with government database
       createdAt: new Date()
     });
@@ -57,7 +56,7 @@ const register = async (req, res) => {
     const token = jwt.sign(
       { 
         userId: savedUser._id, 
-        nationalId: savedUser.nationalId 
+        email: savedUser.email 
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
@@ -66,7 +65,7 @@ const register = async (req, res) => {
     // Return success response (don't send password)
     const userResponse = {
       id: savedUser._id,
-      nationalId: savedUser.nationalId,
+      name: savedUser.name,
       email: savedUser.email,
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
@@ -92,18 +91,18 @@ const register = async (req, res) => {
 // Login user
 const login = async (req, res) => {
   try {
-    const { nationalId, password } = req.body;
+    const { email, password } = req.body;
 
     // Basic validation
-    if (!nationalId || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'National ID and password are required'
+        message: 'Email and password are required'
       });
     }
 
-    // Find user by national ID
-    const user = await User.findOne({ nationalId });
+    // Find user by email
+    const user = await User.findOne({ email });
     
     if (!user) {
       return res.status(400).json({
@@ -126,7 +125,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { 
         userId: user._id, 
-        nationalId: user.nationalId 
+        email: user.email 
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
@@ -139,7 +138,7 @@ const login = async (req, res) => {
     // Return success response
     const userResponse = {
       id: user._id,
-      nationalId: user.nationalId,
+      name: user.name,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

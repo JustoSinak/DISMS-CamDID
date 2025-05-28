@@ -1,3 +1,4 @@
+// identity-blockchain-app/server/routes/auth.js
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
@@ -5,14 +6,40 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later'
+  }
+});
+
+
 // Validation middleware for registration
 const validateRegistration = [
-  body('name')
+  body('username')
     .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters')
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Name can only contain letters and spaces'),
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
+
+  body('firstName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z]+$/)
+    .withMessage('First name can only contain letters'),
+
+  body('lastName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z]+$/)
+    .withMessage('Last name can only contain letters'),
 
   body('email')
     .isEmail()
@@ -56,25 +83,22 @@ const handleValidationErrors = (req, res, next) => {
 router.post(
   '/register',
   validateRegistration,
+  limiter,
   handleValidationErrors,
   authController.register
 );
 
+
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
+
 router.post(
   '/login',
   validateLogin,
+  limiter,
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      // ... login logic ...
-      return res.json({ success: true, user, token });
-    } catch (err) {
-      return res.status(400).json({ success: false, message: err.message });
-    }
-  }
+  authController.login
 );
 
 // @route   GET /api/auth/profile
@@ -96,7 +120,6 @@ router.get('/verify-token', authenticateToken, (req, res) => {
     message: 'Token is valid',
     user: {
       id: req.user.userId,
-      nationalId: req.user.nationalId,
       email: req.user.email,
       role: req.user.role,
       isVerified: req.user.isVerified

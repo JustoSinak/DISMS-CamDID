@@ -1,17 +1,26 @@
+// identity-blockchain-app/server/models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  // Government Identity Information
-  nationalId: {
+  // Basic User Information
+  username: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
-    minlength: 8,
-    maxlength: 20
+    maxlength: 50
   },
-  
-  // Basic User Information
+  firstName: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 50
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 50
+  },
   email: {
     type: String,
     required: true,
@@ -27,19 +36,7 @@ const userSchema = new mongoose.Schema({
     minlength: 6
   },
   
-  firstName: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 50
-  },
   
-  lastName: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 50
-  },
   
   // Verification Status
   isVerified: {
@@ -113,23 +110,22 @@ const userSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-userSchema.index({ nationalId: 1 });
 userSchema.index({ email: 1 });
 
 // Pre-save middleware to calculate profile completion
 userSchema.pre('save', function(next) {
   let completion = 0;
   const requiredFields = [
-    'nationalId', 'email', 'firstName', 'lastName'
+    'email', 'firstName', 'lastName'
   ];
   
   requiredFields.forEach(field => {
-    if (this[field]) completion += 20;
+    if (this[field]) completion += 25;
   });
   
   // Additional completion for verification
-  if (this.governmentVerification.isVerified) completion += 20;
-  if (this.digitalIdentity.didDocument) completion += 20;
+  if (this.governmentVerification.isVerified) completion += 25;
+  if (this.digitalIdentity.didDocument) completion += 25;
   
   this.profileCompletion = Math.min(completion, 100);
   next();
@@ -146,11 +142,6 @@ userSchema.methods.getPublicProfile = function() {
     role: this.role,
     createdAt: this.createdAt
   };
-};
-
-// Static method to find by national ID
-userSchema.statics.findByNationalId = function(nationalId) {
-  return this.findOne({ nationalId });
 };
 
 module.exports = mongoose.model('User', userSchema);

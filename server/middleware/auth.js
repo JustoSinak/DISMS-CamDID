@@ -1,3 +1,4 @@
+// identity-blockchain-app/server/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -38,7 +39,6 @@ const authenticateToken = async (req, res, next) => {
     // Add user info to request
     req.user = {
       userId: user._id,
-      nationalId: user.nationalId,
       email: user.email,
       role: user.role,
       isVerified: user.isVerified
@@ -112,7 +112,6 @@ const optionalAuth = async (req, res, next) => {
       if (user && user.isActive) {
         req.user = {
           userId: user._id,
-          nationalId: user.nationalId,
           email: user.email,
           role: user.role,
           isVerified: user.isVerified

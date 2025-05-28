@@ -1,3 +1,4 @@
+// identity-blockchain-app/server/app.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -5,28 +6,23 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Import routes
 const authRoutes = require('./routes/auth');
 
 const adminRoutes = require('./routes/admin');
 
-// Import middleware
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-// Security middleware
 app.use(helmet());
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
 
-// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://your-domain.com'] 
@@ -34,24 +30,26 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Database connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev')
 .then(() => console.log('✅ Connected to MongoDB'))
 .catch((error) => console.error('MongoDB connection error:', error));
 
-// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes);
+
+// Test endpoint
+app.get('/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Test route is working!'
+  });
+});
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'CamDID API is running',

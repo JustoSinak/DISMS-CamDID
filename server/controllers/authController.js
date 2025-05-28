@@ -1,3 +1,4 @@
+// identity-blockchain-app/server/controllers/authController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -6,16 +7,18 @@ const User = require('../models/User');
 const register = async (req, res) => {
   try {
     const { 
-      name, 
+      username,
+      firstName,
+      lastName,
       email, 
       password
     } = req.body;
 
     // Basic validation
-    if (!name || !email || !password) {
+    if (!username || !firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, and password are required'
+        message: 'Username, first name, last name, email, and password are required'
       });
     }
 
@@ -33,14 +36,9 @@ const register = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Parse name into firstName and lastName (simple split)
-    const nameParts = name.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
     // Create new user
     const newUser = new User({
-      name,
+      username,
       firstName,
       lastName,
       email,
@@ -49,32 +47,60 @@ const register = async (req, res) => {
       createdAt: new Date()
     });
 
-    // Save user to database
-    const savedUser = await newUser.save();
+    // Save user to database with try-catch to isolate errors
+    let savedUser;
+    try {
+      savedUser = await newUser.save();
+    } catch (saveError) {
+      console.error('Error saving user:', saveError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error saving user to database'
+      });
+    }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: savedUser._id, 
-        email: savedUser.email 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // Check for JWT_SECRET presence
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error: JWT_SECRET is not set'
+      });
+    }
 
-    // Return success response (don't send password)
+    // Generate JWT token with try-catch to isolate errors
+    let token;
+    try {
+      token = jwt.sign(
+        { 
+          userId: savedUser._id, 
+          email: savedUser.email 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+    } catch (tokenError) {
+      console.error('Error generating JWT token:', tokenError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error generating authentication token'
+      });
+    }
+
+    // Return success response
     const userResponse = {
       id: savedUser._id,
-      name: savedUser.name,
+      username: savedUser.username,
+      name: `${savedUser.firstName} ${savedUser.lastName}`.trim(),
       email: savedUser.email,
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
       isVerified: savedUser.isVerified
     };
 
-    res.status(201).json({
+    res.json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration successful',
       user: userResponse,
       token
     });
@@ -138,7 +164,7 @@ const login = async (req, res) => {
     // Return success response
     const userResponse = {
       id: user._id,
-      name: user.name,
+      name: `${user.firstName} ${user.lastName}`.trim(),
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

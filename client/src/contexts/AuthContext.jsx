@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
   // Register user
   const register = async (registrationData) => {
     try {
-      const res = await axios.post('/api/auth/register', registrationData);
+      const res = await api.post('/auth/register', registrationData);
       if (res.data.success) {
         // Do NOT dispatch REGISTER_SUCCESS if you want to redirect to login
         return { success: true, message: res.data.message };
@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }) => {
   // Login user
   const login = async (loginData) => {
     try {
-      const res = await axios.post('/api/auth/login', loginData);
+      const res = await api.post('/auth/login', loginData);
       if (res.data.success) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -197,3 +197,8 @@ export const useAuth = () => {
   }
   return context;
 };
+
+
+// client/src/context/AuthContext.jsx
+
+

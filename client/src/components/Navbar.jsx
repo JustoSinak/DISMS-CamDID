@@ -302,3 +302,36 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+// client/src/components/Navbar.jsx
+// import { Link } from "react-router-dom";
+// import { useAuth } from "../contexts/AuthContext";
+
+// const Navbar = () => {
+//   const { user, logout } = useAuth();
+
+//   return (
+//     <nav className="flex justify-between items-center p-4 bg-gray-100 shadow-md">
+//       <Link to="/" className="text-xl font-bold">CamDID</Link>
+
+//       <div className="flex items-center gap-4">
+//         {!user ? (
+//           <>
+//             <Link to="/login" className="hover:underline">Login</Link>
+//             <Link to="/register" className="hover:underline">Register</Link>
+//           </>
+//         ) : (
+//           <>
+//             <Link to="/dashboard" className="hover:underline">Dashboard</Link>
+//             <Link to="/credentials" className="hover:underline">Credentials</Link>
+//             <Link to="/profile" className="hover:underline">Profile</Link>
+//             <button onClick={logout} className="text-red-500 hover:underline">Logout</button>
+//           </>
+//         )}
+//       </div>
+//     </nav>
+//   );
+// };
+
+// export default Navbar;

@@ -1,9 +1,10 @@
+// identity-blockchain-app/client/src/pages/Home.jsx
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import identity from '../assets/digitalID.jpeg';
 import Navbar from '../components/Navbar';
-import { Shield, Lock, Smartphone, Globe, Users, CheckCircle, ArrowRight, Award, Zap } from 'lucide-react';
+import { Lock, Smartphone, Globe, Users, CheckCircle, ArrowRight, Award, Zap } from 'lucide-react';
 
 // If you have Button and Card components as in your design system, import them here
 // import { Button } from "@/components/ui/Button";
@@ -11,7 +12,6 @@ import { Shield, Lock, Smartphone, Globe, Users, CheckCircle, ArrowRight, Award,
 
 const features = [
   {
-    icon: <Shield className="w-8 h-8 text-emerald-500" />,
     title: 'Secure Identity',
     description: 'Your digital identity is protected by advanced cryptography and blockchain technology.',
   },
@@ -94,9 +94,9 @@ const Home = () => {
             className="md:w-1/2 mb-12 md:mb-0"
           >
             <div className="flex justify-start mb-6">
-              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+              {/* <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-xl">
                 <Shield className="w-12 h-12 text-emerald-500" />
-              </div>
+              </div> */}
             </div>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6 text-white">
               Your Digital Identity, <span className="block text-orange-300">Your Control</span>

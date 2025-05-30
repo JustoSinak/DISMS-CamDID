@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Register new user with name and email
+// Register new user
 const register = async (req, res) => {
   try {
     const { 
@@ -15,21 +15,31 @@ const register = async (req, res) => {
     } = req.body;
 
     // Basic validation
-    if (!username || !firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Username, first name, last name, email, and password are required'
+        message: 'First name, last name, email, and password are required'
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
+    // Check if user already exists with this email
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
       return res.status(400).json({
         success: false,
         message: 'User with this email already exists'
       });
+    }
+
+    // Check if username is taken (if provided)
+    if (username) {
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken'
+        });
+      }
     }
 
     // Hash password
@@ -38,21 +48,32 @@ const register = async (req, res) => {
 
     // Create new user
     const newUser = new User({
-      username,
+      username: username || null, // Set to null if not provided
       firstName,
       lastName,
       email,
       password: hashedPassword,
-      isVerified: false, // Will be verified later with government database
+      isVerified: false,
       createdAt: new Date()
     });
 
-    // Save user to database with try-catch to isolate errors
+    // Save user to database
     let savedUser;
     try {
       savedUser = await newUser.save();
     } catch (saveError) {
       console.error('Error saving user:', saveError);
+      
+      // Handle specific MongoDB errors
+      if (saveError.code === 11000) {
+        // Duplicate key error
+        const field = Object.keys(saveError.keyPattern)[0];
+        return res.status(400).json({
+          success: false,
+          message: `${field} already exists`
+        });
+      }
+      
       return res.status(500).json({
         success: false,
         message: 'Error saving user to database'
@@ -64,17 +85,18 @@ const register = async (req, res) => {
       console.error('JWT_SECRET is not defined in environment variables');
       return res.status(500).json({
         success: false,
-        message: 'Server configuration error: JWT_SECRET is not set'
+        message: 'Server configuration error'
       });
     }
 
-    // Generate JWT token with try-catch to isolate errors
+    // Generate JWT token
     let token;
     try {
       token = jwt.sign(
         { 
           userId: savedUser._id, 
-          email: savedUser.email 
+          email: savedUser.email,
+          role: savedUser.role
         },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
@@ -87,18 +109,18 @@ const register = async (req, res) => {
       });
     }
 
-    // Return success response
+    // Return success response with user data
     const userResponse = {
       id: savedUser._id,
       username: savedUser.username,
-      name: `${savedUser.firstName} ${savedUser.lastName}`.trim(),
-      email: savedUser.email,
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
-      isVerified: savedUser.isVerified
+      email: savedUser.email,
+      isVerified: savedUser.isVerified,
+      role: savedUser.role
     };
 
-    res.json({
+    res.status(201).json({
       success: true,
       message: 'Registration successful',
       user: userResponse,

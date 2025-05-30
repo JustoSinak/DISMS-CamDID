@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import CredentialList from "./CredentialList";
 import ActivityHistory from "./ActivityHistory";
-import { WalletIcon, IdentificationIcon, ClockIcon } from "@heroicons/react/outline";
+import { WalletIcon, IdentificationIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 const Dashboard = () => {
   return (

@@ -53,9 +53,10 @@ const Register = () => {
     const errors = {};
 
     // Username validation
-    if (!formData.username) {
-      errors.username = 'Username is required';
-    }
+    // Removed username required validation to make it optional
+    // if (!formData.username) {
+    //   errors.username = 'Username is required';
+    // }
 
     // First name validation
     if (!formData.firstName) {
@@ -154,14 +155,13 @@ const Register = () => {
             {/* Name */}
             <div className="relative">
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username *
+                Username
               </label>
               <Users className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
               <input
                 id="username"
                 name="username"
                 type="text"
-                required
                 className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                   formErrors.username ? 'border-red-500' : 'border-gray-300'
                 }`}

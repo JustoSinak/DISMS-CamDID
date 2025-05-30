@@ -15,5 +15,8 @@
   "description": "",
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@heroicons/react": "^1.0.6"
   }
 }

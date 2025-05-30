@@ -5,9 +5,9 @@ const userSchema = new mongoose.Schema({
   // Basic User Information
   username: {
     type: String,
-    required: true,
     trim: true,
-    maxlength: 50
+    maxlength: 50,
+    default: undefined
   },
   firstName: {
     type: String,
@@ -24,7 +24,6 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
@@ -36,15 +35,13 @@ const userSchema = new mongoose.Schema({
     minlength: 6
   },
   
-  
-  
   // Verification Status
   isVerified: {
     type: Boolean,
     default: false
   },
   
-  // Government Verification (will be expanded later)
+  // Government Verification
   governmentVerification: {
     isVerified: {
       type: Boolean,
@@ -58,7 +55,7 @@ const userSchema = new mongoose.Schema({
     }
   },
   
-  // Digital Identity (will be expanded for DID integration)
+  // Digital Identity
   digitalIdentity: {
     didDocument: {
       type: String,
@@ -105,12 +102,20 @@ const userSchema = new mongoose.Schema({
     max: 100
   }
 }, {
-  timestamps: true, // Adds createdAt and updatedAt automatically
+  timestamps: true,
   versionKey: false
 });
 
-// Index for faster queries
-userSchema.index({ email: 1 });
+// Create proper indexes with partial filter expression
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index(
+  { username: 1 },
+  { 
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { username: { $type: "string" } }
+  }
+);
 
 // Pre-save middleware to calculate profile completion
 userSchema.pre('save', function(next) {
@@ -123,7 +128,6 @@ userSchema.pre('save', function(next) {
     if (this[field]) completion += 25;
   });
   
-  // Additional completion for verification
   if (this.governmentVerification.isVerified) completion += 25;
   if (this.digitalIdentity.didDocument) completion += 25;
   
@@ -137,6 +141,7 @@ userSchema.methods.getPublicProfile = function() {
     id: this._id,
     firstName: this.firstName,
     lastName: this.lastName,
+    username: this.username,
     isVerified: this.isVerified,
     profileCompletion: this.profileCompletion,
     role: this.role,

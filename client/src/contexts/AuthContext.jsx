@@ -8,7 +8,8 @@ const initialState = {
   token: localStorage.getItem('camdid_token'),
   isAuthenticated: false,
   loading: true,
-  error: null
+  error: null,
+  rememberMe: localStorage.getItem('camdid_remember') === 'true'
 };
 
 // Action types
@@ -21,7 +22,8 @@ const AUTH_ACTIONS = {
   REGISTER_FAILURE: 'REGISTER_FAILURE',
   LOGOUT: 'LOGOUT',
   LOAD_USER: 'LOAD_USER',
-  CLEAR_ERROR: 'CLEAR_ERROR'
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  SET_REMEMBER_ME: 'SET_REMEMBER_ME'
 };
 
 // Reducer
@@ -37,7 +39,11 @@ const authReducer = (state, action) => {
 
     case AUTH_ACTIONS.LOGIN_SUCCESS:
     case AUTH_ACTIONS.REGISTER_SUCCESS:
-      localStorage.setItem('camdid_token', action.payload.token);
+      if (state.rememberMe) {
+        localStorage.setItem('camdid_token', action.payload.token);
+      } else {
+        sessionStorage.setItem('camdid_token', action.payload.token);
+      }
       return {
         ...state,
         user: action.payload.user,
@@ -50,6 +56,7 @@ const authReducer = (state, action) => {
     case AUTH_ACTIONS.LOGIN_FAILURE:
     case AUTH_ACTIONS.REGISTER_FAILURE:
       localStorage.removeItem('camdid_token');
+      sessionStorage.removeItem('camdid_token');
       return {
         ...state,
         user: null,
@@ -61,13 +68,16 @@ const authReducer = (state, action) => {
 
     case AUTH_ACTIONS.LOGOUT:
       localStorage.removeItem('camdid_token');
+      sessionStorage.removeItem('camdid_token');
+      localStorage.removeItem('camdid_remember');
       return {
         ...state,
         user: null,
         token: null,
         isAuthenticated: false,
         loading: false,
-        error: null
+        error: null,
+        rememberMe: false
       };
 
     case AUTH_ACTIONS.LOAD_USER:
@@ -76,6 +86,13 @@ const authReducer = (state, action) => {
         user: action.payload,
         isAuthenticated: true,
         loading: false
+      };
+
+    case AUTH_ACTIONS.SET_REMEMBER_ME:
+      localStorage.setItem('camdid_remember', action.payload);
+      return {
+        ...state,
+        rememberMe: action.payload
       };
 
     case AUTH_ACTIONS.CLEAR_ERROR:
@@ -98,12 +115,25 @@ export const AuthProvider = ({ children }) => {
 
   // Load user on app start if token exists
   useEffect(() => {
-  if (state.token) {
-    loadUser();
-  } else {
-    dispatch({ type: 'LOGIN_FAILURE', payload: null });
-  }
-}, [state.token]);
+    const initializeAuth = async () => {
+      const token = state.rememberMe 
+        ? localStorage.getItem('camdid_token') 
+        : sessionStorage.getItem('camdid_token');
+
+      if (token) {
+        try {
+          await loadUser();
+        } catch (error) {
+          console.error('Failed to load user:', error);
+          dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: null });
+        }
+      } else {
+        dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: null });
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   // Load user from token
   const loadUser = async () => {
@@ -114,10 +144,12 @@ export const AuthProvider = ({ children }) => {
         payload: response.data.user
       });
     } catch (error) {
+      console.error('Load user error:', error);
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: error.response?.data?.message || 'Failed to load user'
       });
+      throw error;
     }
   };
 
@@ -126,7 +158,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/auth/register', registrationData);
       if (res.data.success) {
-        // Do NOT dispatch REGISTER_SUCCESS if you want to redirect to login
         return { success: true, message: res.data.message };
       } else {
         return { success: false, message: res.data.message || 'Registration failed' };
@@ -137,9 +168,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login user
-  const login = async (loginData) => {
+  const login = async (loginData, rememberMe = false) => {
+    dispatch({ type: AUTH_ACTIONS.LOGIN_START });
+    dispatch({ type: AUTH_ACTIONS.SET_REMEMBER_ME, payload: rememberMe });
+
     try {
       const res = await api.post('/auth/login', loginData);
+      console.log('Login response:', res.data);
+
       if (res.data.success) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -148,12 +184,27 @@ export const AuthProvider = ({ children }) => {
             token: res.data.token
           }
         });
+
+        // Set the token in axios defaults for future requests
+        api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+
         return { success: true, message: res.data.message };
       } else {
-        return { success: false, message: res.data.message || 'Login failed' };
+        const errorMessage = res.data.message || 'Login failed';
+        dispatch({
+          type: AUTH_ACTIONS.LOGIN_FAILURE,
+          payload: errorMessage
+        });
+        return { success: false, message: errorMessage };
       }
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || err.message };
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || err.message;
+      dispatch({
+        type: AUTH_ACTIONS.LOGIN_FAILURE,
+        payload: errorMessage
+      });
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -164,6 +215,9 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear token from axios defaults
+      delete api.defaults.headers.common['Authorization'];
+      // Update state
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
   };

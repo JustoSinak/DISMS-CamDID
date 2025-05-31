@@ -1,0 +1,46 @@
+.identityCard {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+
+  .cardHeader {
+    margin-bottom: 1.5rem;
+    
+    h3 {
+      color: #2c3e50;
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+  }
+
+  .cardBody {
+    .userInfo {
+      .infoItem {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: center;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .label {
+          color: #6c757d;
+          font-weight: 500;
+          width: 100px;
+          flex-shrink: 0;
+        }
+
+        .value {
+          color: #2c3e50;
+          font-weight: 400;
+          word-break: break-all;
+        }
+      }
+    }
+  }
+}

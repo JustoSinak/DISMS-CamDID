@@ -1,7 +1,7 @@
 // identity-blockchain-app/client/src/components/auth/Login.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Loader } from 'lucide-react';
 // import logo from '../../assets/CamDID.jpg;
 import Logo from '../../assets/CamDID.png';
@@ -15,16 +15,30 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [success, setSuccess] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
 
   const { login, loading, error, isAuthenticated, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if user was redirected from a protected route
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  // Check for remembered login on component mount
+  useEffect(() => {
+    const remembered = localStorage.getItem('camdid_remember') === 'true';
+    if (remembered) {
+      setRememberMe(true);
+    }
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      console.log('User is authenticated, redirecting...');
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   // Clear error when component mounts
   useEffect(() => {
@@ -42,20 +56,22 @@ const Login = () => {
     e.preventDefault();
     setSuccess('');
     clearError();
+    setFormErrors({});
 
     try {
-      const result = await login({ email: formData.email, password: formData.password });
+      const result = await login({ email: formData.email, password: formData.password }, rememberMe);
+      console.log('Login result:', result);
+      
       if (result && result.success) {
         setSuccess('Login successful! Redirecting...');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+        // The redirection will be handled by the useEffect above when isAuthenticated changes
       } else if (result && result.message) {
         setFormErrors({ general: result.message });
       } else {
         setFormErrors({ general: 'Login failed. Please try again.' });
       }
     } catch (err) {
+      console.error('Login error:', err);
       setFormErrors({ general: err.message || 'Login failed. Please try again.' });
     }
   };
@@ -143,6 +159,23 @@ const Login = () => {
                   <Eye className="w-5 h-5 text-gray-400" />
                 )}
               </button>
+            </div>
+
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
             </div>
           </div>
 

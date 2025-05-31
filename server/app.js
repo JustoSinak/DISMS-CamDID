@@ -7,9 +7,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
-
 const adminRoutes = require('./routes/admin');
-
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -38,7 +36,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev'
 .catch((error) => console.error('MongoDB connection error:', error));
 
 app.use('/api/auth', authRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Test endpoint
 app.get('/test', (req, res) => {

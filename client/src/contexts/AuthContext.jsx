@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import api from '../services/api';
 import axios from 'axios';
 
@@ -251,6 +251,8 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;
 
 
 // client/src/context/AuthContext.jsx

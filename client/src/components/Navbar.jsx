@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 // import { Web3Context } from '../contexts/Web3Context';
 import Logo from '../assets/CamDID.svg';
+import { User, Settings, LogOut, Upload } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -10,6 +11,7 @@ const Navbar = () => {
 //   const { connectWallet, account, isConnected } = useContext(Web3Context);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -31,9 +33,10 @@ const Navbar = () => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Toggle mobile menu
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const handleLogout = () => {
+    logout();
+    setIsProfileOpen(false);
+    setIsMenuOpen(false);
   };
 
   return (
@@ -99,6 +102,16 @@ const Navbar = () => {
             >
               FAQ
             </Link>
+            <Link 
+              to="/contact" 
+              className={`text-sm font-medium ${
+                location.pathname === '/contact' 
+                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
+                  : 'text-gray-700 hover:text-indigo-600'
+              }`}
+            >
+              Contact
+            </Link>
             
             {/* Show these links only when authenticated */}
             {isAuthenticated && (
@@ -130,79 +143,120 @@ const Navbar = () => {
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <div className="relative group">
-                  <button className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
-                    <img 
-                      src={user?.profileImage || 'https://via.placeholder.com/32'} 
-                      alt="Profile" 
-                      className="w-8 h-8 rounded-full"
-                    />
-                  </button>
-                  <div className="absolute right-0 w-48 mt-2 py-2 bg-white rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-                    <Link 
-                      to="/profile" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
-                    <Link 
-                      to="/settings" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Settings
-                    </Link>
-                    <button 
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      Log Out
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
               <>
+                {/* Wallet Connection Button */}
+                <button
+                  // onClick={connectWallet}
+                  className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Connect Wallet
+                </button>
+                <button
+                  className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-green-100 text-green-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {formatAddress}
+                </button>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center space-x-3 focus:outline-none"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <img 
+                        src={user?.profileImage || 'https://via.placeholder.com/32'} 
+                        alt="Profile" 
+                        className="w-8 h-8 rounded-full object-cover border-2 border-emerald-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+                    </div>
+                  </button>
+
+                  {/* Profile Dropdown */}
+                  {isProfileOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm text-gray-500">Signed in as</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
+                      </div>
+                      
+                      <Link 
+                        to="/profile" 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Your Profile
+                      </Link>
+
+                      <Link 
+                        to="/settings" 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings
+                      </Link>
+
+                      <label 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        <span>Update Picture</span>
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={(e) => {
+                            // Handle profile picture update
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              // Add your profile picture update logic here
+                            }
+                          }}
+                        />
+                      </label>
+
+                      <button 
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
                 <Link 
                   to="/login" 
-                  className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+                  className="px-4 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 border border-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors duration-300"
                 >
                   Log In
                 </Link>
                 <Link 
                   to="/register" 
-                  className="text-sm font-medium px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors duration-300"
                 >
-                  Create Identity
+                  Sign Up
                 </Link>
-              </>
+              </div>
             )}
           </div>
-
-          {/* Wallet Connection Button */}
-          <button
-            // onClick={connectWallet}
-            className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Connect Wallet
-          </button>
-          <button
-            className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-green-100 text-green-700"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {formatAddress}
-          </button>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button 
-              onClick={toggleMenu} 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 focus:outline-none"
             >
               {isMenuOpen ? (
@@ -241,16 +295,7 @@ const Navbar = () => {
                   ? 'text-indigo-600'
                   : 'text-gray-700'
               }`}
-              onClick={(e) => {
-                if (location.pathname === '/') {
-                  e.preventDefault();
-                  const featuresSection = document.getElementById('features');
-                  if (featuresSection) {
-                    featuresSection.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }
-                setIsMenuOpen(false);
-              }}
+              onClick={() => setIsMenuOpen(false)}
             >
               Features
             </Link>
@@ -305,9 +350,18 @@ const Navbar = () => {
               </>
             )}
 
+            {/* Mobile Authentication Section */}
             <div className="pt-2 border-t border-gray-200">
               {isAuthenticated ? (
                 <>
+                  <div className="flex items-center py-2">
+                    <img 
+                      src={user?.profileImage || 'https://via.placeholder.com/32'} 
+                      alt="Profile" 
+                      className="w-8 h-8 rounded-full mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+                  </div>
                   <Link 
                     to="/profile" 
                     className="block text-sm font-medium py-2 text-gray-700"
@@ -323,32 +377,29 @@ const Navbar = () => {
                     Settings
                   </Link>
                   <button 
-                    onClick={() => {
-                      logout();
-                      setIsMenuOpen(false);
-                    }}
+                    onClick={handleLogout}
                     className="block w-full text-left text-sm font-medium py-2 text-red-600"
                   >
-                    Log Out
+                    Sign out
                   </button>
                 </>
               ) : (
-                <>
+                <div className="flex flex-col space-y-2">
                   <Link 
                     to="/login" 
-                    className="block text-sm font-medium py-2 text-gray-700"
+                    className="block text-center text-sm font-medium py-2 text-emerald-600 hover:text-emerald-700 border border-emerald-600 rounded-lg hover:bg-emerald-50"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Log In
                   </Link>
                   <Link 
                     to="/register" 
-                    className="block text-sm font-medium py-2 text-indigo-600"
+                    className="block text-center text-sm font-medium py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Create Identity
+                    Sign Up
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Navbar from '../components/Navbar';
 import { Shield, Users, Globe, Award, CheckCircle, Lock } from 'lucide-react';
 
 // Fallback Card/CardContent if you don't use @/components/ui/card
@@ -47,7 +48,10 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div>
+      <Navbar />
+    <div className="min-h-screen bg-emerald-100 py-12">
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
@@ -204,6 +208,7 @@ const About = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

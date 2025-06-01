@@ -1,6 +1,12 @@
-/* body {
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -10,19 +16,9 @@
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
-} */
+}
 
-
-/* Import Tailwind CSS base styles */
-@tailwind base;
-
-/* Import Tailwind CSS component styles */
-@tailwind components;
-
-/* Import Tailwind CSS utility styles */
-@tailwind utilities;
-
-/* Custom styles can be added below */
+/* Custom styles */
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
@@ -41,7 +37,6 @@ code {
   }
 }
 
-/* Add your custom component styles using @layer components */
 @layer components {
   .btn {
     @apply px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75;
@@ -52,7 +47,6 @@ code {
   }
 }
 
-/* Add custom utility classes using @layer utilities */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;

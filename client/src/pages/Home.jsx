@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 // import identity from '../assets/digitalID.jpeg';
 import Navbar from '../components/Navbar';
 import Logo from '../assets/CamDID.svg';
-import { Settings2Icon,Lock, Mail, Phone, MapPin, Smartphone, Globe, Users, CheckCircle, ArrowRight, Award, Zap, QrCode } from 'lucide-react';
+import { Settings2Icon, Lock, Mail, Phone, MapPin, Smartphone, Globe, Users, CheckCircle, ArrowRight, Zap, QrCode } from 'lucide-react';
 
 // If you have Button and Card components as in your design system, import them here
 // import { Button } from "@/components/ui/Button";
@@ -196,45 +196,66 @@ const Home = () => {
                 ))}
               </div>
             </div>
-            <div className="relative flex">
-              <div className="bg-white rounded-2xl p-20 right-10 shadow-2xl">
-                {/* <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <Award className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-emerald-700">Digital Credential</h3>
-                    <p className="text-sm text-gray-500">University of Yaoundé I</p>
-                  </div>
-                </div> */}
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Name:</span>
-                    <span className="font-medium text-emerald-900">Justo Sinak</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Father's Name:</span>
-                    <span className="font-medium text-emerald-900">xxxxxxxxxxx</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mother's Name:</span>
-                    <span className="font-medium text-emerald-900">xxxxxxxxxxx</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Profession:</span>
-                    <span className="font-medium text-emerald-900">Student</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                      <span className="text-emerald-500 font-medium">Verified</span>
+            <div className="relative">
+              <div className="relative bg-emerald-100 h-70 w-auto rounded-2xl p-9 shadow-lg">
+                <div className="space-y-4 flex justify-between p-6 bg-white rounded-xl shadow-lg border-2 border-emerald-100 relative overflow-hidden">
+                  {/* Left side - Personal Information */}
+                  <div className="space-y-3 flex-grow">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-emerald-700 mb-1">Digital Identity Card</h3>
+                      <p className="text-sm text-gray-500">ID: CM-2025-0123-4567</p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span className="text-gray-600 text-sm">Full Name:</span>
+                        <span className="font-medium text-emerald-900">Justo Sinak</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span className="text-gray-600 text-sm">Date of Birth:</span>
+                        <span className="font-medium text-emerald-900">15/03/1995</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span className="text-gray-600 text-sm">Nationality:</span>
+                        <span className="font-medium text-emerald-900">Cameroonian</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span className="text-gray-600 text-sm">Gender:</span>
+                        <span className="font-medium text-emerald-900">Male</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <span className="text-gray-600 text-sm">Profession:</span>
+                        <span className="font-medium text-emerald-900">Student</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 text-sm">Status:</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                          <span className="text-emerald-500 font-medium text-sm">Verified</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              <div className="h-15 w-15 p-8 border-l-4 border-emerald-400 bg-emerald-200">
 
+                  {/* Right side - Photo and QR */}
+                  <div className="flex flex-col items-center space-y-4 ml-6 min-w-[140px]">
+                    <div className="w-32 h-40 rounded-lg overflow-hidden border-2 border-emerald-200">
+                      <img
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop"
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <QrCode className="w-16 h-16 text-emerald-700 opacity-20" />
+                    </div>
+                  </div>
+
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-700"></div>
+                    <div className="absolute inset-0 bg-grid-emerald-500/30"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

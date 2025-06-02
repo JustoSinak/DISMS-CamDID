@@ -9,39 +9,42 @@ import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
 import CreateIdentity from './pages/CreateIdentity';
 import { AuthProvider } from './contexts/AuthContext';
+import { Web3Provider } from './contexts/Web3Context';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminRoute from './components/common/AdminRoute';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/create-identity" element={
-            <ProtectedRoute>
-              <CreateIdentity />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          {/* Example admin route: */}
-          {/* <Route path="/admin" element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } /> */}
-          {/* Add other routes like /dashboard etc. when needed */}
-        </Routes>
-      </Router>
+      <Web3Provider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/create-identity" element={
+              <ProtectedRoute>
+                <CreateIdentity />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            {/* Example admin route: */}
+            {/* <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } /> */}
+            {/* Add other routes like /dashboard etc. when needed */}
+          </Routes>
+        </Router>
+      </Web3Provider>
     </AuthProvider>
   );
 }

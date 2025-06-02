@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
-import { Camera, Upload, X, Check, Loader } from 'lucide-react';
+import { Camera, Upload, X, Check } from 'lucide-react';
 import DashboardNavbar from '../components/dashboard/DashboardNavbar';
+import Button from '../components/common/Button';
+import Input from '../components/common/Input';
+import Card from '../components/common/Card';
+import Loader from '../components/common/Loader';
 
 const CreateIdentity = () => {
   const navigate = useNavigate();
@@ -12,7 +16,7 @@ const CreateIdentity = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  
+
   const [formData, setFormData] = useState({
     nationalIdNumber: '',
     dateOfBirth: '',
@@ -49,7 +53,6 @@ const CreateIdentity = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -61,7 +64,7 @@ const CreateIdentity = () => {
   const handleImageChange = (e, type) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         setFormErrors(prev => ({
           ...prev,
           [type]: 'Image size should be less than 5MB'
@@ -85,15 +88,13 @@ const CreateIdentity = () => {
 
   const validateForm = () => {
     const errors = {};
-    
-    // National ID validation
+
     if (!formData.nationalIdNumber) {
       errors.nationalIdNumber = 'National ID number is required';
     } else if (!/^\d{9}$/.test(formData.nationalIdNumber)) {
       errors.nationalIdNumber = 'Invalid National ID number format';
     }
 
-    // Date of Birth validation
     if (!formData.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
     } else {
@@ -105,21 +106,18 @@ const CreateIdentity = () => {
       }
     }
 
-    // Required fields validation
     if (!formData.placeOfBirth) errors.placeOfBirth = 'Place of birth is required';
     if (!formData.gender) errors.gender = 'Gender is required';
     if (!formData.address) errors.address = 'Address is required';
     if (!formData.city) errors.city = 'City is required';
     if (!formData.region) errors.region = 'Region is required';
-    
-    // Phone number validation (Cameroon format)
+
     if (!formData.phoneNumber) {
       errors.phoneNumber = 'Phone number is required';
     } else if (!/^(\+237|237)?[6-9][0-9]{8}$/.test(formData.phoneNumber)) {
       errors.phoneNumber = 'Invalid Cameroon phone number';
     }
 
-    // Image validation
     if (!formData.idCardImage) errors.idCardImage = 'ID card image is required';
     if (!formData.selfieImage) errors.selfieImage = 'Selfie image is required';
 
@@ -141,16 +139,12 @@ const CreateIdentity = () => {
     setSuccess('');
 
     try {
-      // Create FormData object to send files
       const submitData = new FormData();
       Object.keys(formData).forEach(key => {
         submitData.append(key, formData[key]);
       });
-
-      // Add blockchain account
       submitData.append('walletAddress', account);
 
-      // TODO: Replace with actual API call
       const response = await fetch('/api/identity/create', {
         method: 'POST',
         body: submitData,
@@ -164,7 +158,7 @@ const CreateIdentity = () => {
       }
 
       const data = await response.json();
-      
+
       setSuccess('Digital identity created successfully! Redirecting to dashboard...');
       setTimeout(() => {
         navigate('/dashboard');
@@ -177,10 +171,10 @@ const CreateIdentity = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <DashboardNavbar />
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="max-w-4xl mx-auto p-6 md:p-8 bg-white rounded-lg shadow-lg">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold text-gray-900">Create Your Digital Identity</h1>
             <p className="mt-2 text-gray-600">Please provide your ID card information to create your digital identity</p>
@@ -200,66 +194,41 @@ const CreateIdentity = () => {
 
           {web3Loading ? (
             <div className="flex justify-center items-center py-8">
-              <Loader className="w-8 h-8 animate-spin text-emerald-600" />
+              <Loader />
               <span className="ml-2 text-gray-600">Connecting to Web3...</span>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* National ID Number */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">National ID Number</label>
-                  <input
-                    type="text"
-                    name="nationalIdNumber"
-                    value={formData.nationalIdNumber}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.nationalIdNumber ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                    placeholder="Enter your ID number"
-                  />
-                  {formErrors.nationalIdNumber && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.nationalIdNumber}</p>
-                  )}
-                </div>
-
-                {/* Date of Birth */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.dateOfBirth ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                  />
-                  {formErrors.dateOfBirth && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.dateOfBirth}</p>
-                  )}
-                </div>
-
-                {/* Place of Birth */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Place of Birth</label>
-                  <input
-                    type="text"
-                    name="placeOfBirth"
-                    value={formData.placeOfBirth}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.placeOfBirth ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                    placeholder="Enter your place of birth"
-                  />
-                  {formErrors.placeOfBirth && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.placeOfBirth}</p>
-                  )}
-                </div>
-
-                {/* Gender */}
+                <Input
+                  label="National ID Number"
+                  type="text"
+                  name="nationalIdNumber"
+                  value={formData.nationalIdNumber}
+                  onChange={handleChange}
+                  error={formErrors.nationalIdNumber}
+                  placeholder="Enter your ID number"
+                  required
+                />
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={handleChange}
+                  error={formErrors.dateOfBirth}
+                  required
+                />
+                <Input
+                  label="Place of Birth"
+                  type="text"
+                  name="placeOfBirth"
+                  value={formData.placeOfBirth}
+                  onChange={handleChange}
+                  error={formErrors.placeOfBirth}
+                  placeholder="Enter your place of birth"
+                  required
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Gender</label>
                   <select
@@ -269,6 +238,7 @@ const CreateIdentity = () => {
                     className={`mt-1 block w-full rounded-md shadow-sm ${
                       formErrors.gender ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-emerald-500 focus:border-emerald-500`}
+                    required
                   >
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
@@ -278,44 +248,26 @@ const CreateIdentity = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.gender}</p>
                   )}
                 </div>
-
-                {/* Address */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Address</label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.address ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                    placeholder="Enter your address"
-                  />
-                  {formErrors.address && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>
-                  )}
-                </div>
-
-                {/* City */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.city ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                    placeholder="Enter your city"
-                  />
-                  {formErrors.city && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.city}</p>
-                  )}
-                </div>
-
-                {/* Region */}
+                <Input
+                  label="Address"
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  error={formErrors.address}
+                  placeholder="Enter your address"
+                  required
+                />
+                <Input
+                  label="City"
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  error={formErrors.city}
+                  placeholder="Enter your city"
+                  required
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Region</label>
                   <select
@@ -325,6 +277,7 @@ const CreateIdentity = () => {
                     className={`mt-1 block w-full rounded-md shadow-sm ${
                       formErrors.region ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-emerald-500 focus:border-emerald-500`}
+                    required
                   >
                     <option value="">Select region</option>
                     <option value="Adamawa">Adamawa</option>
@@ -342,29 +295,19 @@ const CreateIdentity = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.region}</p>
                   )}
                 </div>
-
-                {/* Phone Number */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm ${
-                      formErrors.phoneNumber ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-emerald-500 focus:border-emerald-500`}
-                    placeholder="e.g., 237612345678"
-                  />
-                  {formErrors.phoneNumber && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
-                  )}
-                </div>
+                <Input
+                  label="Phone Number"
+                  type="tel"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  error={formErrors.phoneNumber}
+                  placeholder="e.g., 237612345678"
+                  required
+                />
               </div>
 
-              {/* Image Upload Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                {/* ID Card Image Upload */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Upload ID Card Image
@@ -414,7 +357,6 @@ const CreateIdentity = () => {
                   )}
                 </div>
 
-                {/* Selfie Image Upload */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Upload Selfie
@@ -465,9 +407,8 @@ const CreateIdentity = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
               <div className="flex justify-end mt-8">
-                <button
+                <Button
                   type="submit"
                   disabled={loading}
                   className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -483,14 +424,14 @@ const CreateIdentity = () => {
                       Create Digital Identity
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           )}
-        </div>
+        </Card>
       </div>
-    </div>
+    </>
   );
 };
 
-export default CreateIdentity; 
+export default CreateIdentity;

@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import api from '../services/api';
-import axios from 'axios';
 
 // Initial state
 const initialState = {
@@ -23,7 +22,10 @@ const AUTH_ACTIONS = {
   LOGOUT: 'LOGOUT',
   LOAD_USER: 'LOAD_USER',
   CLEAR_ERROR: 'CLEAR_ERROR',
-  SET_REMEMBER_ME: 'SET_REMEMBER_ME'
+  SET_REMEMBER_ME: 'SET_REMEMBER_ME',
+  UPDATE_PROFILE_START: 'UPDATE_PROFILE_START',
+  UPDATE_PROFILE_SUCCESS: 'UPDATE_PROFILE_SUCCESS',
+  UPDATE_PROFILE_FAILURE: 'UPDATE_PROFILE_FAILURE'
 };
 
 // Reducer
@@ -31,6 +33,7 @@ const authReducer = (state, action) => {
   switch (action.type) {
     case AUTH_ACTIONS.LOGIN_START:
     case AUTH_ACTIONS.REGISTER_START:
+    case AUTH_ACTIONS.UPDATE_PROFILE_START:
       return {
         ...state,
         loading: true,
@@ -53,6 +56,14 @@ const authReducer = (state, action) => {
         error: null
       };
 
+    case AUTH_ACTIONS.UPDATE_PROFILE_SUCCESS:
+      return {
+        ...state,
+        user: action.payload,
+        loading: false,
+        error: null
+      };
+
     case AUTH_ACTIONS.LOGIN_FAILURE:
     case AUTH_ACTIONS.REGISTER_FAILURE:
       localStorage.removeItem('camdid_token');
@@ -62,6 +73,13 @@ const authReducer = (state, action) => {
         user: null,
         token: null,
         isAuthenticated: false,
+        loading: false,
+        error: action.payload
+      };
+
+    case AUTH_ACTIONS.UPDATE_PROFILE_FAILURE:
+      return {
+        ...state,
         loading: false,
         error: action.payload
       };
@@ -138,11 +156,15 @@ export const AuthProvider = ({ children }) => {
   // Load user from token
   const loadUser = async () => {
     try {
-      const response = await api.get('/auth/profile');
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER,
-        payload: response.data.user
-      });
+      const response = await api.get('/auth/verify-token');
+      if (response.data.success) {
+        dispatch({
+          type: AUTH_ACTIONS.LOAD_USER,
+          payload: response.data.user
+        });
+      } else {
+        throw new Error('Failed to verify token');
+      }
     } catch (error) {
       console.error('Load user error:', error);
       dispatch({
@@ -153,17 +175,86 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user profile
+  const updateUserProfile = async (profileData) => {
+    dispatch({ type: AUTH_ACTIONS.UPDATE_PROFILE_START });
+
+    try {
+      const formData = new FormData();
+      
+      // Handle profile image if it's a base64 string
+      if (profileData.profileImage && profileData.profileImage.startsWith('data:image')) {
+        // Convert base64 to blob
+        const response = await fetch(profileData.profileImage);
+        const blob = await response.blob();
+        formData.append('profileImage', blob, 'profile.jpg');
+        delete profileData.profileImage;
+      }
+
+      // Append other profile data
+      Object.keys(profileData).forEach(key => {
+        formData.append(key, profileData[key]);
+      });
+
+      const response = await api.put('/users/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        dispatch({
+          type: AUTH_ACTIONS.UPDATE_PROFILE_SUCCESS,
+          payload: response.data.user
+        });
+        return { success: true, message: 'Profile updated successfully' };
+      } else {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch({
+        type: AUTH_ACTIONS.UPDATE_PROFILE_FAILURE,
+        payload: errorMessage
+      });
+      throw error;
+    }
+  };
+
   // Register user
   const register = async (registrationData) => {
+    dispatch({ type: AUTH_ACTIONS.REGISTER_START });
+
     try {
-      const res = await api.post('/auth/register', registrationData);
-      if (res.data.success) {
-        return { success: true, message: res.data.message };
+      const response = await api.post('/auth/register', registrationData);
+      
+      if (response.data.success) {
+        dispatch({
+          type: AUTH_ACTIONS.REGISTER_SUCCESS,
+          payload: {
+            user: response.data.user,
+            token: response.data.token
+          }
+        });
+
+        // Set the token in axios defaults for future requests
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+
+        return { success: true, message: response.data.message };
       } else {
-        return { success: false, message: res.data.message || 'Registration failed' };
+        dispatch({
+          type: AUTH_ACTIONS.REGISTER_FAILURE,
+          payload: response.data.message
+        });
+        return { success: false, message: response.data.message };
       }
-    } catch (err) {
-      return { success: false, message: err.response?.data?.message || err.message };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch({
+        type: AUTH_ACTIONS.REGISTER_FAILURE,
+        payload: errorMessage
+      });
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -173,38 +264,43 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.SET_REMEMBER_ME, payload: rememberMe });
 
     try {
-      const res = await api.post('/auth/login', loginData);
-      console.log('Login response:', res.data);
+      const response = await api.post('/auth/login', loginData);
+      
+      if (response.data.success) {
+        // Verify that the user's role matches the requested role
+        if (loginData.role && response.data.user.role !== loginData.role) {
+          throw new Error(`Invalid credentials for ${loginData.role} role`);
+        }
 
-      if (res.data.success) {
+        // Store token based on rememberMe preference
+        if (rememberMe) {
+          localStorage.setItem('camdid_token', response.data.token);
+        } else {
+          sessionStorage.setItem('camdid_token', response.data.token);
+        }
+
+        // Set the token in axios defaults for future requests
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
           payload: {
-            user: res.data.user,
-            token: res.data.token
+            user: response.data.user,
+            token: response.data.token
           }
         });
 
-        // Set the token in axios defaults for future requests
-        api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-
-        return { success: true, message: res.data.message };
+        return { success: true, message: 'Login successful' };
       } else {
-        const errorMessage = res.data.message || 'Login failed';
-        dispatch({
-          type: AUTH_ACTIONS.LOGIN_FAILURE,
-          payload: errorMessage
-        });
-        return { success: false, message: errorMessage };
+        throw new Error(response.data.message || 'Login failed');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      const errorMessage = err.response?.data?.message || err.message;
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage
       });
-      return { success: false, message: errorMessage };
+      throw error;
     }
   };
 
@@ -227,13 +323,20 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   };
 
+  // Check if user has specific role
+  const hasRole = (role) => {
+    return state.user?.role === role;
+  };
+
   const value = {
     ...state,
     register,
     login,
     logout,
     clearError,
-    loadUser
+    loadUser,
+    hasRole,
+    updateUserProfile
   };
 
   return (

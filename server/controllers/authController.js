@@ -2,217 +2,180 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { validationResult } = require('express-validator');
 
-// Register new user
+// Generate JWT Token
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE
+  });
+};
+
+// @desc    Register user
+// @route   POST /api/auth/register
+// @access  Public
 const register = async (req, res) => {
   try {
-    const { 
-      username,
-      firstName,
-      lastName,
-      email, 
-      password
-    } = req.body;
-
-    // Basic validation
-    if (!firstName || !lastName || !email || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'First name, last name, email, and password are required'
+        errors: errors.array()
       });
     }
 
-    // Check if user already exists with this email
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
+    const { firstName, lastName, email, password, role } = req.body;
+
+    // Check if user exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: 'User already exists'
       });
     }
 
-    // Check if username is taken (if provided)
-    if (username) {
-      const existingUsername = await User.findOne({ username });
-      if (existingUsername) {
-        return res.status(400).json({
-          success: false,
-          message: 'Username is already taken'
-        });
-      }
+    // Validate role
+    const validRoles = ['citizen', 'verifier', 'issuer'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role specified'
+      });
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Create new user
-    const newUser = new User({
-      username: username || null, // Set to null if not provided
+    // Create user
+    const user = await User.create({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
-      isVerified: false,
-      createdAt: new Date()
+      password,
+      role
     });
 
-    // Save user to database
-    let savedUser;
-    try {
-      savedUser = await newUser.save();
-    } catch (saveError) {
-      console.error('Error saving user:', saveError);
-      
-      // Handle specific MongoDB errors
-      if (saveError.code === 11000) {
-        // Duplicate key error
-        const field = Object.keys(saveError.keyPattern)[0];
-        return res.status(400).json({
-          success: false,
-          message: `${field} already exists`
-        });
-      }
-      
-      return res.status(500).json({
-        success: false,
-        message: 'Error saving user to database'
-      });
-    }
-
-    // Check for JWT_SECRET presence
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not defined in environment variables');
-      return res.status(500).json({
-        success: false,
-        message: 'Server configuration error'
-      });
-    }
-
-    // Generate JWT token
-    let token;
-    try {
-      token = jwt.sign(
-        { 
-          userId: savedUser._id, 
-          email: savedUser.email,
-          role: savedUser.role
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-    } catch (tokenError) {
-      console.error('Error generating JWT token:', tokenError);
-      return res.status(500).json({
-        success: false,
-        message: 'Error generating authentication token'
-      });
-    }
-
-    // Return success response with user data
-    const userResponse = {
-      id: savedUser._id,
-      username: savedUser.username,
-      firstName: savedUser.firstName,
-      lastName: savedUser.lastName,
-      email: savedUser.email,
-      isVerified: savedUser.isVerified,
-      role: savedUser.role
-    };
+    // Generate token
+    const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful',
-      user: userResponse,
-      token
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
     });
-
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during registration'
+      message: 'Error in user registration'
     });
   }
 };
 
-// Login user
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Basic validation
-    if (!email || !password) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        errors: errors.array()
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
-    
+    const { email, password, role } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      return res.status(400).json({
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user._id, 
-        email: user.email 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // Validate role if provided
+    if (role && user.role !== role) {
+      return res.status(401).json({
+        success: false,
+        message: `Invalid credentials for ${role} role`
+      });
+    }
 
     // Update last login
-    user.lastLogin = new Date();
+    user.lastLogin = Date.now();
     await user.save();
 
-    // Return success response
-    const userResponse = {
-      id: user._id,
-      name: `${user.firstName} ${user.lastName}`.trim(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      isVerified: user.isVerified
-    };
+    // Generate token
+    const token = generateToken(user._id);
 
     res.json({
       success: true,
-      message: 'Login successful',
-      user: userResponse,
-      token
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: 'Error in user login'
     });
   }
 };
 
-// Get current user profile
-const getProfile = async (req, res) => {
+// @desc    Get current user
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = async (req, res) => {
   try {
-    // req.user is set by auth middleware
+    const user = await User.findById(req.user.id);
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+        governmentVerified: user.governmentVerified,
+        digitalIdentity: user.digitalIdentity,
+        profileCompletion: user.profileCompletion
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user data'
+    });
+  }
+};
+
+// Verify token and get user info
+const verifyToken = async (req, res) => {
+  try {
     const user = await User.findById(req.user.userId).select('-password');
     
     if (!user) {
@@ -224,9 +187,49 @@ const getProfile = async (req, res) => {
 
     res.json({
       success: true,
-      user
+      user: {
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isVerified: user.isVerified
+      }
     });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during token verification'
+    });
+  }
+};
 
+// @desc    Get current user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({
@@ -261,6 +264,8 @@ const logout = async (req, res) => {
 module.exports = {
   register,
   login,
+  verifyToken,
   getProfile,
-  logout
+  logout,
+  getMe
 };

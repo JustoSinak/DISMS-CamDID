@@ -6,7 +6,7 @@ const User = require('../models/User');
 const authenticateToken = async (req, res, next) => {
   try {
     // Get token from header
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
@@ -20,7 +20,7 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Find user
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -28,22 +28,8 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated.'
-      });
-    }
-
-    // Add user info to request
-    req.user = {
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified
-    };
-
+    // Add user to request
+    req.user = user;
     next();
 
   } catch (error) {
@@ -67,7 +53,7 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// Middleware to check if user is verified (for government verification later)
+// Middleware to check if user is verified
 const requireVerification = (req, res, next) => {
   if (!req.user.isVerified) {
     return res.status(403).json({
@@ -88,7 +74,7 @@ const requireRole = (roles = []) => {
       });
     }
 
-    if (roles.length && !roles.includes(req.user.role)) {
+    if (roles.length && !req.user.hasRole(roles)) {
       return res.status(403).json({
         success: false,
         message: 'Insufficient permissions.'
@@ -99,28 +85,22 @@ const requireRole = (roles = []) => {
   };
 };
 
-// Optional authentication (for public endpoints that can show different content for authenticated users)
+// Optional authentication
 const optionalAuth = async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.userId);
+      const user = await User.findById(decoded.id);
       
-      if (user && user.isActive) {
-        req.user = {
-          userId: user._id,
-          email: user.email,
-          role: user.role,
-          isVerified: user.isVerified
-        };
+      if (user) {
+        req.user = user;
       }
     }
 
     next(); // Continue regardless of token validity
-
   } catch (error) {
     // Continue without user info if token is invalid
     next();
@@ -129,7 +109,7 @@ const optionalAuth = async (req, res, next) => {
 
 // Admin role middleware
 const isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && req.user.hasRole('admin')) {
     return next();
   }
   return res.status(403).json({

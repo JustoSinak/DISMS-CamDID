@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Shield, Lock, Smartphone, Globe, Key, FileCheck } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import Layout from '../components/Layout';
+import { useTheme } from '../contexts/ThemeContext';
 
 const FAQItem = ({ question, answer, isOpen, onClick }) => {
+  const { theme } = useTheme();
+  
   return (
-    <div className="border-b border-emerald-100 last:border-0">
+    <div className={`border-b ${
+      theme === 'dark' ? 'border-gray-700' : 'border-emerald-100'
+    } last:border-0`}>
       <button
         className="w-full py-6 text-left focus:outline-none flex justify-between items-center"
         onClick={onClick}
       >
-        <span className="text-lg font-medium text-emerald-900">{question}</span>
+        <span className={`text-lg font-medium ${
+          theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
+        }`}>{question}</span>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-emerald-600" />
+          <ChevronUp className={`w-5 h-5 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-900'
+          }`} />
         ) : (
-          <ChevronDown className="w-5 h-5 text-emerald-600" />
+          <ChevronDown className={`w-5 h-5 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-900'
+          }`} />
         )}
       </button>
       <AnimatePresence>
@@ -26,7 +37,9 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="pb-6 text-gray-600 leading-relaxed space-y-2">
+            <div className={`pb-6 leading-relaxed space-y-2 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               {answer}
             </div>
           </motion.div>
@@ -38,6 +51,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
+  const { theme } = useTheme();
 
   const faqCategories = [
     {
@@ -127,67 +141,98 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white">
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-emerald-900 mb-4">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-lg text-emerald-600 max-w-2xl mx-auto">
-            Find answers to common questions about CamDID and digital identity management
-          </p>
-        </div>
+    <Layout>
+      <div className={`min-h-screen ${
+        theme === 'dark'
+          ? 'bg-gradient-to-b from-gray-900 to-gray-800'
+          : 'bg-gradient-to-b from-emerald-50 to-white'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+          <div className="text-center mb-16">
+            <h1 className={`text-4xl font-bold mb-4 ${
+              theme === 'dark' ? 'text-white' : 'text-emerald-900'
+            }`}>
+              Frequently Asked Questions
+            </h1>
+            <p className={`text-lg max-w-2xl mx-auto ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
+            }`}>
+              Find answers to common questions about CamDID and digital identity management
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {faqCategories.map((category, categoryIndex) => (
-            <div key={categoryIndex} className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-6">
-                {category.icon}
-                <h2 className="text-xl font-semibold text-emerald-900">
-                  {category.title}
-                </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {faqCategories.map((category, categoryIndex) => (
+              <div key={categoryIndex} className={`rounded-2xl shadow-lg p-6 ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <div className="flex items-center gap-3 mb-6">
+                  {React.cloneElement(category.icon, {
+                    className: `w-6 h-6 ${
+                      theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
+                    }`
+                  })}
+                  <h2 className={`text-xl font-semibold ${
+                    theme === 'dark' ? 'text-white' : 'text-emerald-900'
+                  }`}>
+                    {category.title}
+                  </h2>
+                </div>
+                <div className={`divide-y ${
+                  theme === 'dark' ? 'divide-gray-700' : 'divide-emerald-100'
+                }`}>
+                  {category.questions.map((faq, index) => (
+                    <FAQItem
+                      key={index}
+                      question={faq.question}
+                      answer={faq.answer}
+                      isOpen={openIndex === `${categoryIndex}-${index}`}
+                      onClick={() => setOpenIndex(openIndex === `${categoryIndex}-${index}` ? null : `${categoryIndex}-${index}`)}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="divide-y divide-emerald-100">
-                {category.questions.map((faq, index) => (
-                  <FAQItem
-                    key={index}
-                    question={faq.question}
-                    answer={faq.answer}
-                    isOpen={openIndex === `${categoryIndex}-${index}`}
-                    onClick={() => setOpenIndex(openIndex === `${categoryIndex}-${index}` ? null : `${categoryIndex}-${index}`)}
-                  />
-                ))}
-              </div>
+            ))}
+          </div>
+
+          {/* Contact Section */}
+          <div className="mt-16 text-center">
+            <h2 className={`text-2xl font-semibold mb-4 ${
+              theme === 'dark' ? 'text-white' : 'text-emerald-900'
+            }`}>
+              Still have questions?
+            </h2>
+            <p className={`mb-6 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
+            }`}>
+              We're here to help. Contact our support team for assistance.
+            </p>
+            <div className="flex justify-center gap-4">
+              <a
+                href="mailto:support@camdid.cm"
+                className={`inline-flex items-center px-6 py-3 rounded-lg transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                }`}
+              >
+                Contact Support
+              </a>
+              <a
+                href="/contact"
+                className={`inline-flex items-center px-6 py-3 rounded-lg border-2 transition-colors ${
+                  theme === 'dark'
+                    ? 'border-emerald-500 text-emerald-400 hover:bg-emerald-900'
+                    : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50'
+                }`}
+              >
+                Visit Help Center
+              </a>
             </div>
-          ))}
-        </div>
-
-        {/* Contact Section */}
-        <div className="mt-16 text-center">
-          <h2 className="text-2xl font-semibold text-emerald-900 mb-4">
-            Still have questions?
-          </h2>
-          <p className="text-emerald-600 mb-6">
-            We're here to help. Contact our support team for assistance.
-          </p>
-          <div className="flex justify-center gap-4">
-            <a
-              href="mailto:support@camdid.cm"
-              className="inline-flex items-center px-6 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-            >
-              Contact Support
-            </a>
-            <a
-              href="/help-center"
-              className="inline-flex items-center px-6 py-3 rounded-lg border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 transition-colors"
-            >
-              Visit Help Center
-            </a>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

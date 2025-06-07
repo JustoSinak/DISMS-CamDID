@@ -4,9 +4,14 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const dotenv = require('dotenv');
+const morgan = require('morgan');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const citizenRoutes = require('./routes/citizen');
+const issuerRoutes = require('./routes/issuer');
+const verifierRoutes = require('./routes/verifier');
 const adminRoutes = require('./routes/admin');
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -23,19 +28,23 @@ app.use(limiter);
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-domain.com'] 
+    ? ['https://cam-did-sib8.vercel.app']  // Updated with your deployed frontend URL
     : ['http://localhost:3000'],
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(morgan('dev'));
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev')
 .then(() => console.log('✅ Connected to MongoDB'))
 .catch((error) => console.error('MongoDB connection error:', error));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/citizen', citizenRoutes);
+app.use('/api/issuer', issuerRoutes);
+app.use('/api/verifier', verifierRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Test endpoint

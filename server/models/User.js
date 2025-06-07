@@ -1,5 +1,6 @@
 // identity-blockchain-app/server/models/User.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   // Basic User Information
@@ -11,71 +12,32 @@ const userSchema = new mongoose.Schema({
   },
   firstName: {
     type: String,
-    required: true,
-    trim: true,
-    maxlength: 50
+    required: [true, 'First name is required']
   },
   lastName: {
     type: String,
-    required: true,
-    trim: true,
-    maxlength: 50
+    required: [true, 'Last name is required']
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'Email is required'],
+    unique: true,
     lowercase: true,
-    trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    trim: true
   },
   
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: [true, 'Password is required'],
+    minlength: 6,
+    select: false
   },
   
-  // Verification Status
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  
-  // Government Verification
-  governmentVerification: {
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
-    verifiedAt: Date,
-    verificationMethod: {
-      type: String,
-      enum: ['government_database', 'document_upload', 'in_person'],
-      default: null
-    }
-  },
-  
-  // Digital Identity
-  digitalIdentity: {
-    didDocument: {
-      type: String,
-      default: null
-    },
-    walletAddress: {
-      type: String,
-      default: null
-    },
-    publicKey: {
-      type: String,
-      default: null
-    }
-  },
-  
-  // Security and Access
+  // Role and Status
   role: {
     type: String,
-    enum: ['citizen', 'issuer', 'verifier', 'admin'],
-    default: 'citizen'
+    enum: ['citizen', 'verifier', 'issuer'],
+    required: [true, 'Role is required']
   },
   
   isActive: {
@@ -90,17 +52,32 @@ const userSchema = new mongoose.Schema({
   },
   
   lastLogin: {
-    type: Date,
-    default: null
+    type: Date
   },
   
-  // Profile completion tracking
-  profileCompletion: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
-  }
+  // Optional Profile Fields
+  phoneNumber: {
+    type: String,
+    required: false
+  },
+  
+  dateOfBirth: {
+    type: Date,
+    required: false
+  },
+  
+  nationalId: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true
+  },
+  
+  // Credentials Reference
+  credentials: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Credential'
+  }]
 }, {
   timestamps: true,
   versionKey: false
@@ -117,23 +94,33 @@ userSchema.index(
   }
 );
 
-// Pre-save middleware to calculate profile completion
-userSchema.pre('save', function(next) {
-  let completion = 0;
-  const requiredFields = [
-    'email', 'firstName', 'lastName'
-  ];
+// Pre-save middleware to hash password
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
   
-  requiredFields.forEach(field => {
-    if (this[field]) completion += 25;
-  });
-  
-  if (this.governmentVerification.isVerified) completion += 25;
-  if (this.digitalIdentity.didDocument) completion += 25;
-  
-  this.profileCompletion = Math.min(completion, 100);
-  next();
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to check if user has required role
+userSchema.methods.hasRole = function(roles) {
+  if (typeof roles === 'string') {
+    return this.role === roles;
+  }
+  return roles.includes(this.role);
+};
 
 // Instance method to get public profile
 userSchema.methods.getPublicProfile = function() {
@@ -142,8 +129,6 @@ userSchema.methods.getPublicProfile = function() {
     firstName: this.firstName,
     lastName: this.lastName,
     username: this.username,
-    isVerified: this.isVerified,
-    profileCompletion: this.profileCompletion,
     role: this.role,
     createdAt: this.createdAt
   };

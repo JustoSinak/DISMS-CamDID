@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 // import { Web3Context } from '../contexts/Web3Context';
 import Logo from '../assets/CamDID.svg';
-import { User, Settings, LogOut, Upload } from 'lucide-react';
+import { User, Settings, LogOut, Upload, Sun, Moon } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 //   const { connectWallet, account, isConnected } = useContext(Web3Context);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -39,369 +41,353 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
+  const navLinkClasses = (path) => `
+    transition-colors duration-200 border-b-2 ${
+      location.pathname === path
+        ? theme === 'dark'
+          ? 'border-indigo-400 text-indigo-400'
+          : 'border-indigo-600 text-indigo-600'
+        : theme === 'dark'
+          ? 'border-transparent text-gray-300 hover:text-indigo-400 hover:border-indigo-400'
+          : 'border-transparent text-gray-600 hover:text-indigo-600 hover:border-indigo-600'
+    }
+  `;
+
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white shadow-md py-2' : 'bg-transparent py-4'
+      scrolled
+        ? theme === 'dark'
+          ? 'bg-gray-900/95 shadow-lg shadow-gray-900/50'
+          : 'bg-white/95 shadow-lg'
+        : theme === 'dark'
+          ? 'bg-gray-900'
+          : 'bg-white'
     }`}>
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <img src={Logo} alt="SecureID" className="h-10 w-10" />
-            <p className="text-xl font-bold"><span className="text-emerald-800">Cam</span><span className="text-red-600">DID</span></p>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className={`text-sm font-medium ${
-                location.pathname === '/' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                  : 'text-gray-700 hover:text-indigo-600'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/#features"
-              className={`text-sm font-medium ${
-                location.pathname === '/features'
-                  ? 'text-indigo-600 border-b-2 border-indigo-600'
-                  : 'text-gray-700 hover:text-indigo-600'
-              }`}
-              onClick={(e) => {
-                if (location.pathname === '/') {
-                  e.preventDefault();
-                  const featuresSection = document.getElementById('features');
-                  if (featuresSection) {
-                    featuresSection.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }
-              }}
-            >
-              Features
-            </Link>
-            <Link
-              to="/about"
-              className={`text-sm font-medium ${
-                location.pathname === '/about' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                  : 'text-gray-700 hover:text-indigo-600'
-              }`}
-            >
-              About
-            </Link>
-            <Link 
-              to="/faq" 
-              className={`text-sm font-medium ${
-                location.pathname === '/faq' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                  : 'text-gray-700 hover:text-indigo-600'
-              }`}
-            >
-              FAQ
-            </Link>
-            <Link 
-              to="/contact" 
-              className={`text-sm font-medium ${
-                location.pathname === '/contact' 
-                  ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                  : 'text-gray-700 hover:text-indigo-600'
-              }`}
-            >
-              Contact
-            </Link>
-            
-            {/* Show these links only when authenticated */}
-            {isAuthenticated && (
-              <>
-                <Link 
-                  to="/dashboard" 
-                  className={`text-sm font-medium ${
-                    location.pathname === '/dashboard' 
-                      ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                      : 'text-gray-700 hover:text-indigo-600'
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative h-16">
+            {/* Logo and Brand */}
+            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center">
+              <Link to="/" className="flex items-center space-x-2">
+                <img src={Logo} alt="CamDID Logo" className="w-8 h-8" />
+                <span
+                  className={`text-xl font-bold ${
+                    theme === "dark" ? "text-gray-100" : "text-gray-900"
                   }`}
                 >
-                  Dashboard
-                </Link>
-                <Link 
-                  to="/credentials" 
-                  className={`text-sm font-medium ${
-                    location.pathname === '/credentials' 
-                      ? 'text-indigo-600 border-b-2 border-indigo-600' 
-                      : 'text-gray-700 hover:text-indigo-600'
-                  }`}
-                >
-                  Credentials
-                </Link>
-              </>
-            )}
-          </div>
+                  <span className="text-emerald-500">Cam</span>
+                  <span className="text-red-600">DID</span>
+                </span>
+              </Link>
+            </div>
 
-          {/* Action Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                {/* Wallet Connection Button */}
-                <button
-                  // onClick={connectWallet}
-                  className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Connect Wallet
-                </button>
-                <button
-                  className="flex items-center text-xs font-medium px-3 py-2 rounded-md bg-green-100 text-green-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {formatAddress}
-                </button>
+            {/* Centered Navigation Links */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center space-x-8 justify-center">
+              <Link to="/" className={navLinkClasses("/")}>
+                Home
+              </Link>
+              <Link to="/about" className={navLinkClasses("/about")}>
+                About
+              </Link>
+              <Link to="/contact" className={navLinkClasses("/contact")}>
+                Contact
+              </Link>
+              <Link to="/faq" className={navLinkClasses("/faq")}>
+                FAQ
+              </Link>
+            </div>
 
+            {/* Right Side Buttons */}
+            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 hidden md:flex items-center space-x-4">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  theme === "dark"
+                    ? "text-gray-300 hover:text-white hover:bg-gray-800"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+
+              {/* Auth Buttons */}
+              {!isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/login-as"
+                    className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
+                      theme === "dark"
+                        ? "text-gray-300 hover:text-white hover:bg-gray-800"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register-as"
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                      theme === "dark"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                    }`}
+                  >
+                    Register
+                  </Link>
+                </div>
+              ) : (
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center space-x-3 focus:outline-none"
+                    className={`flex items-center space-x-2 p-2 rounded-lg transition-colors duration-200 ${
+                      theme === "dark"
+                        ? "text-gray-300 hover:text-white hover:bg-gray-800"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <img 
-                        src={user?.profileImage || 'https://via.placeholder.com/32'} 
-                        alt="Profile" 
-                        className="w-8 h-8 rounded-full object-cover border-2 border-emerald-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
-                    </div>
+                    <User className="w-5 h-5" />
+                    <span>{user?.firstName}</span>
                   </button>
 
                   {/* Profile Dropdown */}
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm text-gray-500">Signed in as</p>
-                        <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
-                      </div>
-                      
-                      <Link 
-                        to="/profile" 
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileOpen(false)}
+                    <div
+                      className={`absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1 ${
+                        theme === "dark"
+                          ? "bg-gray-800 border border-gray-700"
+                          : "bg-white border border-gray-200"
+                      }`}
+                    >
+                      <Link
+                        to="/citizen/dashboard"
+                        className={`block px-4 py-2 text-sm ${
+                          theme === "dark"
+                            ? "text-gray-300 hover:bg-gray-700"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
-                        <User className="w-4 h-4 mr-2" />
-                        Your Profile
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4" />
+                          <span>Dashboard</span>
+                        </div>
                       </Link>
-
-                      <Link 
-                        to="/settings" 
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileOpen(false)}
+                      <Link
+                        to="/settings"
+                        className={`block px-4 py-2 text-sm ${
+                          theme === "dark"
+                            ? "text-gray-300 hover:bg-gray-700"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
+                        <div className="flex items-center space-x-2">
+                          <Settings className="w-4 h-4" />
+                          <span>Settings</span>
+                        </div>
                       </Link>
-
-                      <label 
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        <span>Update Picture</span>
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => {
-                            // Handle profile picture update
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              // Add your profile picture update logic here
-                            }
-                          }}
-                        />
-                      </label>
-
-                      <button 
+                      <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        className={`w-full text-left px-4 py-2 text-sm ${
+                          theme === "dark"
+                            ? "text-gray-300 hover:bg-gray-700"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign out
+                        <div className="flex items-center space-x-2">
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </div>
                       </button>
                     </div>
                   )}
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/login" 
-                  className="px-4 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 border border-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors duration-300"
-                >
-                  Log In
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors duration-300"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 focus:outline-none"
-            >
-              {isMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
               )}
-            </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`p-2 rounded-lg ${
+                  theme === "dark"
+                    ? "text-gray-300 hover:text-white hover:bg-gray-800"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {isMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg mt-2 px-4 py-3 absolute w-full">
-          <div className="flex flex-col space-y-3">
-            <Link 
-              to="/" 
-              className={`text-sm font-medium py-2 ${
-                location.pathname === '/' 
-                  ? 'text-indigo-600' 
-                  : 'text-gray-700'
+        <div className={`md:hidden ${
+          theme === 'dark'
+            ? 'bg-gray-900 border-t border-gray-800'
+            : 'bg-white border-t border-gray-200'
+        }`}>
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            <Link
+              to="/"
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                location.pathname === '/'
+                  ? theme === 'dark'
+                    ? 'text-indigo-400 border-l-4 border-indigo-400'
+                    : 'text-indigo-600 border-l-4 border-indigo-600'
+                  : theme === 'dark'
+                    ? 'text-gray-300 hover:text-indigo-400'
+                    : 'text-gray-600 hover:text-indigo-600'
               }`}
-              onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
             <Link
-              to="/#features"
-              className={`text-sm font-medium py-2 ${
-                location.pathname === '/features'
-                  ? 'text-indigo-600'
-                  : 'text-gray-700'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Features
-            </Link>
-            <Link
               to="/about"
-              className={`text-sm font-medium py-2 ${
-                location.pathname === '/about' 
-                  ? 'text-indigo-600' 
-                  : 'text-gray-700'
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                location.pathname === '/about'
+                  ? theme === 'dark'
+                    ? 'text-indigo-400 border-l-4 border-indigo-400'
+                    : 'text-indigo-600 border-l-4 border-indigo-600'
+                  : theme === 'dark'
+                    ? 'text-gray-300 hover:text-indigo-400'
+                    : 'text-gray-600 hover:text-indigo-600'
               }`}
-              onClick={() => setIsMenuOpen(false)}
             >
               About
             </Link>
-            <Link 
-              to="/faq" 
-              className={`text-sm font-medium py-2 ${
-                location.pathname === '/faq' 
-                  ? 'text-indigo-600' 
-                  : 'text-gray-700'
+            <Link
+              to="/contact"
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                location.pathname === '/contact'
+                  ? theme === 'dark'
+                    ? 'text-indigo-400 border-l-4 border-indigo-400'
+                    : 'text-indigo-600 border-l-4 border-indigo-600'
+                  : theme === 'dark'
+                    ? 'text-gray-300 hover:text-indigo-400'
+                    : 'text-gray-600 hover:text-indigo-600'
               }`}
-              onClick={() => setIsMenuOpen(false)}
+            >
+              Contact
+            </Link>
+            <Link
+              to="/faq"
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                location.pathname === '/faq'
+                  ? theme === 'dark'
+                    ? 'text-indigo-400 border-l-4 border-indigo-400'
+                    : 'text-indigo-600 border-l-4 border-indigo-600'
+                  : theme === 'dark'
+                    ? 'text-gray-300 hover:text-indigo-400'
+                    : 'text-gray-600 hover:text-indigo-600'
+              }`}
             >
               FAQ
             </Link>
-            
-            {/* Show these links only when authenticated */}
-            {isAuthenticated && (
-              <>
-                <Link 
-                  to="/dashboard" 
-                  className={`text-sm font-medium py-2 ${
-                    location.pathname === '/dashboard' 
-                      ? 'text-indigo-600' 
-                      : 'text-gray-700'
+
+            {/* Theme Toggle Button - Mobile */}
+            <button
+              onClick={toggleTheme}
+              className={`w-full flex items-center px-3 py-2 rounded-lg text-base font-medium ${
+                theme === 'dark'
+                  ? 'text-gray-300 hover:text-white hover:bg-gray-800'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-5 h-5 mr-2" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-5 h-5 mr-2" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </button>
+
+            {!isAuthenticated ? (
+              <div className="space-y-2 pt-4">
+                <Link
+                  to="/login"
+                  className={`block w-full px-3 py-2 rounded-lg text-center font-medium ${
+                    theme === 'dark'
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className={`block w-full px-3 py-2 rounded-lg text-center font-medium ${
+                    theme === 'dark'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                  }`}
+                >
+                  Register
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2 pt-4">
+                <Link
+                  to="/citizen/dashboard"
+                  className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                    theme === 'dark'
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  to="/credentials" 
-                  className={`text-sm font-medium py-2 ${
-                    location.pathname === '/credentials' 
-                      ? 'text-indigo-600' 
-                      : 'text-gray-700'
+                <Link
+                  to="/settings"
+                  className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                    theme === 'dark'
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
                 >
-                  Credentials
+                  Settings
                 </Link>
-              </>
+                <button
+                  onClick={handleLogout}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-base font-medium ${
+                    theme === 'dark'
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-800'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  Logout
+                </button>
+              </div>
             )}
-
-            {/* Mobile Authentication Section */}
-            <div className="pt-2 border-t border-gray-200">
-              {isAuthenticated ? (
-                <>
-                  <div className="flex items-center py-2">
-                    <img 
-                      src={user?.profileImage || 'https://via.placeholder.com/32'} 
-                      alt="Profile" 
-                      className="w-8 h-8 rounded-full mr-2"
-                    />
-                    <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
-                  </div>
-                  <Link 
-                    to="/profile" 
-                    className="block text-sm font-medium py-2 text-gray-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <Link 
-                    to="/settings" 
-                    className="block text-sm font-medium py-2 text-gray-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Settings
-                  </Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="block w-full text-left text-sm font-medium py-2 text-red-600"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <div className="flex flex-col space-y-2">
-                  <Link 
-                    to="/login" 
-                    className="block text-center text-sm font-medium py-2 text-emerald-600 hover:text-emerald-700 border border-emerald-600 rounded-lg hover:bg-emerald-50"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Log In
-                  </Link>
-                  <Link 
-                    to="/register" 
-                    className="block text-center text-sm font-medium py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}

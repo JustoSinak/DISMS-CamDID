@@ -1,13 +1,11 @@
-// identity-blockchain-app/client/src/components/auth/Register.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link, useParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Users } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, Users, Phone, Building2, FileText } from 'lucide-react';
 import Logo from '../../assets/CamDID.png';
 import Navbar from '../Navbar';
 
-const Register = () => {
-  const { role } = useParams(); // Get role from URL params
+const RegisterVerifier = () => {
   const [formData, setFormData] = useState({
     username: '',
     firstName: '',
@@ -15,7 +13,10 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: role // Include role in form data
+    organizationName: '',
+    organizationId: '',
+    phoneNumber: '',
+    role: 'verifier'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -24,20 +25,12 @@ const Register = () => {
   const navigate = useNavigate();
   const [success, setSuccess] = useState('');
 
-  // Validate role
-  useEffect(() => {
-    if (!['citizen', 'verifier', 'issuer'].includes(role)) {
-      navigate('/register-as');
-      return;
-    }
-  }, [role, navigate]);
-
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(`/dashboard/${role}`); // Redirect to role-specific dashboard
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate, role]);
+  }, [isAuthenticated, navigate]);
 
   // Clear error when component mounts
   useEffect(() => {
@@ -71,15 +64,15 @@ const Register = () => {
     // First name validation
     if (!formData.firstName) {
       errors.firstName = 'First name is required';
-    } else if (formData.firstName.length < 2) {
-      errors.firstName = 'First name must be at least 2 characters';
+    } else if (!/^[a-zA-Z]+$/.test(formData.firstName)) {
+      errors.firstName = 'First name can only contain letters';
     }
 
     // Last name validation
     if (!formData.lastName) {
       errors.lastName = 'Last name is required';
-    } else if (formData.lastName.length < 2) {
-      errors.lastName = 'Last name must be at least 2 characters';
+    } else if (!/^[a-zA-Z]+$/.test(formData.lastName)) {
+      errors.lastName = 'Last name can only contain letters';
     }
 
     // Email validation
@@ -105,6 +98,24 @@ const Register = () => {
       errors.confirmPassword = 'Passwords do not match';
     }
 
+    // Organization validation
+    if (!formData.organizationName) {
+      errors.organizationName = 'Organization name is required';
+    }
+
+    if (!formData.organizationId) {
+      errors.organizationId = 'Organization ID is required';
+    } else if (formData.organizationId.length < 8) {
+      errors.organizationId = 'Organization ID must be at least 8 characters';
+    }
+
+    // Phone validation (Cameroon format)
+    if (!formData.phoneNumber) {
+      errors.phoneNumber = 'Phone number is required';
+    } else if (!/^(\+237|237)?[0-9]{8,9}$/.test(formData.phoneNumber)) {
+      errors.phoneNumber = 'Invalid Cameroon phone number';
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -121,11 +132,11 @@ const Register = () => {
     const { confirmPassword, ...registrationData } = formData;
 
     try {
-      const result = await register({ ...registrationData, role });
+      const result = await register(registrationData);
       if (result && result.success) {
-        setSuccess(`You successfully registered as ${role}! Redirecting to login...`);
+        setSuccess('Registration successful! Redirecting to login...');
         setTimeout(() => {
-          navigate(`/login/${role}`);
+          navigate('/login/verifier');
         }, 2000);
       } else if (result && result.message) {
         setFormErrors({ general: result.message });
@@ -145,14 +156,19 @@ const Register = () => {
           <div>
             <img src={Logo} className="h-40 w-auto mx-auto" alt="CamDID Logo" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Create your CamDID {role.charAt(0).toUpperCase() + role.slice(1)} Account
+              Register as a Verifier
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Join Cameroon's digital identity platform as a {role}
+              Join Cameroon's digital identity platform as a credential verifier
             </p>
           </div>
           
-          {success && <div style={{ color: 'green', marginBottom: '1rem' }}>{success}</div>}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              {success}
+            </div>
+          )}
+
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -166,20 +182,66 @@ const Register = () => {
             )}
 
             <div className="space-y-4">
-              {/* Name */}
+              {/* Organization Name */}
+              <div className="relative">
+                <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700">
+                  Organization Name *
+                </label>
+                <Building2 className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
+                <input
+                  id="organizationName"
+                  name="organizationName"
+                  type="text"
+                  required
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                    formErrors.organizationName ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your organization name"
+                  value={formData.organizationName}
+                  onChange={handleChange}
+                />
+                {formErrors.organizationName && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.organizationName}</p>
+                )}
+              </div>
+
+              {/* Organization ID */}
+              <div className="relative">
+                <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700">
+                  Organization ID *
+                </label>
+                <FileText className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
+                <input
+                  id="organizationId"
+                  name="organizationId"
+                  type="text"
+                  required
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                    formErrors.organizationId ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your organization ID"
+                  value={formData.organizationId}
+                  onChange={handleChange}
+                />
+                {formErrors.organizationId && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.organizationId}</p>
+                )}
+              </div>
+
+              {/* Username */}
               <div className="relative">
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                  Username
+                  Username (Optional)
                 </label>
                 <Users className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
                 <input
                   id="username"
                   name="username"
                   type="text"
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
                     formErrors.username ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter your username"
+                  placeholder="Choose a username"
                   value={formData.username}
                   onChange={handleChange}
                 />
@@ -188,6 +250,7 @@ const Register = () => {
                 )}
               </div>
 
+              {/* First Name */}
               <div className="relative">
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                   First Name *
@@ -198,7 +261,7 @@ const Register = () => {
                   name="firstName"
                   type="text"
                   required
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
                     formErrors.firstName ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your first name"
@@ -210,6 +273,7 @@ const Register = () => {
                 )}
               </div>
 
+              {/* Last Name */}
               <div className="relative">
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                   Last Name *
@@ -220,7 +284,7 @@ const Register = () => {
                   name="lastName"
                   type="text"
                   required
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
                     formErrors.lastName ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your last name"
@@ -232,8 +296,31 @@ const Register = () => {
                 )}
               </div>
 
+              {/* Phone Number */}
+              <div className="relative">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                  Phone Number *
+                </label>
+                <Phone className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  required
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                    formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your phone number"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                />
+                {formErrors.phoneNumber && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
+                )}
+              </div>
+
               {/* Email */}
-              <div className='relative'>
+              <div className="relative">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email Address *
                 </label>
@@ -243,7 +330,7 @@ const Register = () => {
                   name="email"
                   type="email"
                   required
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
                     formErrors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your email"
@@ -256,42 +343,39 @@ const Register = () => {
               </div>
 
               {/* Password */}
-              <div className='relative'>
+              <div className="relative">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password *
                 </label>
                 <Lock className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
-                
-                {/* <div className="mt-1 relative"> */}
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.password ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-9 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <span className="text-sm text-gray-500">
-                      {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
-                    </span>
-                  </button>
-                {/* </div> */}
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                    formErrors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-9 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <span className="text-sm text-gray-500">
+                    {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                  </span>
+                </button>
                 {formErrors.password && (
                   <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>
                 )}
               </div>
 
               {/* Confirm Password */}
-              <div className='relative'>
+              <div className="relative">
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                   Confirm Password *
                 </label>
@@ -301,7 +385,7 @@ const Register = () => {
                   name="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
                     formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Confirm your password"
@@ -309,14 +393,14 @@ const Register = () => {
                   onChange={handleChange}
                 />
                 <button
-                    type="button"
-                    className="absolute right-3 top-9 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <span className="text-sm text-gray-500">
-                      {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
-                    </span>
-                  </button>
+                  type="button"
+                  className="absolute right-3 top-9 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <span className="text-sm text-gray-500">
+                    {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+                  </span>
+                </button>
                 {formErrors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-600">{formErrors.confirmPassword}</p>
                 )}
@@ -327,16 +411,17 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating Account...' : 'Create Account'}
               </button>
             </div>
           </form>
+
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to={`/login/${role}`} className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/login/verifier" className="font-medium text-emerald-600 hover:text-emerald-500">
                 Sign in here
               </Link>
             </p>
@@ -347,4 +432,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default RegisterVerifier; 

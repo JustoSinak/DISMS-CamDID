@@ -3,6 +3,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
+const { check } = require('express-validator');
+const { roleAuth } = require('../middleware/roleAuth');
 
 const router = express.Router();
 
@@ -51,7 +53,11 @@ const validateRegistration = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+
+  body('role')
+    .isIn(['citizen', 'verifier', 'issuer'])
+    .withMessage('Invalid role')
 ];
 
 // Validation middleware for login
@@ -79,11 +85,17 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // @route   POST /api/auth/register
-// @desc    Register new user
+// @desc    Register user
 // @access  Public
 router.post(
   '/register',
-  validateRegistration,
+  [
+    check('firstName', 'First name is required').notEmpty(),
+    check('lastName', 'Last name is required').notEmpty(),
+    check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
+    check('role', 'Role is required').isIn(['citizen', 'verifier', 'issuer'])
+  ],
   limiter,
   handleValidationErrors,
   authController.register
@@ -96,7 +108,10 @@ router.post(
 
 router.post(
   '/login',
-  validateLogin,
+  [
+    check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Password is required').exists()
+  ],
   limiter,
   handleValidationErrors,
   authController.login
@@ -127,6 +142,11 @@ router.get('/verify-token', authenticateToken, (req, res) => {
     }
   });
 });
+
+// @route   GET /api/auth/me
+// @desc    Get current user
+// @access  Private
+router.get('/me', roleAuth('citizen', 'verifier', 'issuer'), authController.getMe);
 
 module.exports = router;
 

@@ -1,4 +1,5 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   User,
   Shield,
@@ -17,21 +18,22 @@ import {
   ChevronRight,
   Wallet,
   Eye,
-  EyeOff,
   CheckCircle,
-  AlertCircle,
   Menu,
   X
 } from 'lucide-react';
 
-// Mock context - replace with your actual contexts
-const AuthContext = React.createContext();
-const IdentityContext = React.createContext();
-const Web3Context = React.createContext();
+// Component implementation
 
-const DashboardSidebar = () => {
+const DashboardSidebar = ({ onCollapseChange }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (onCollapseChange) {
+      onCollapseChange(isCollapsed);
+    }
+  }, [isCollapsed, onCollapseChange]);
   const [activeSection, setActiveSection] = useState('overview');
   
   // Mock context data - replace with actual context usage
@@ -45,42 +47,56 @@ const DashboardSidebar = () => {
       label: 'Overview',
       icon: Activity,
       badge: null,
-      description: 'Dashboard overview'
+      description: 'Dashboard overview',
+      path: '/citizen/dashboard'
     },
     {
       id: 'identity',
-      label: 'My Identity',
+      label: 'Create Identity',
       icon: User,
-      badge: identityStatus.verified,
-      description: 'Manage your digital identity'
+      badge: null,
+      description: 'Create your digital identity',
+      path: '/create-identity'
+    },
+    {
+      id: 'manage-identity',
+      label: 'Manage Identity',
+      icon: Shield,
+      badge: null,
+      description: 'Manage your digital identity',
+      path: '/citizen/my-identity'
     },
     {
       id: 'credentials',
       label: 'Credentials',
       icon: CreditCard,
       badge: identityStatus.pending > 0 ? identityStatus.pending : null,
-      description: 'Verifiable credentials'
+      description: 'Verifiable credentials',
+      path: '/citizen/credentials'
     },
     {
       id: 'documents',
       label: 'Documents',
       icon: FileText,
       badge: null,
-      description: 'Identity documents'
+      description: 'Identity documents',
+      path: '/citizen/documents'
     },
     {
       id: 'share',
       label: 'Share Identity',
       icon: Share2,
       badge: null,
-      description: 'Share with third parties'
+      description: 'Share with third parties',
+      path: '/citizen/share'
     },
     {
       id: 'qr-scanner',
       label: 'QR Scanner',
       icon: QrCode,
       badge: null,
-      description: 'Scan identity QR codes'
+      description: 'Scan identity QR codes',
+      path: '/citizen/qr-scanner'
     }
   ];
 
@@ -90,21 +106,24 @@ const DashboardSidebar = () => {
       label: 'Privacy Control',
       icon: Eye,
       badge: null,
-      description: 'Selective disclosure settings'
+      description: 'Selective disclosure settings',
+      path: '/citizen/privacy'
     },
     {
       id: 'access-control',
       label: 'Access Control',
       icon: Lock,
       badge: null,
-      description: 'Manage permissions'
+      description: 'Manage permissions',
+      path: '/citizen/access-control'
     },
     {
       id: 'verification-history',
       label: 'Verification History',
       icon: Shield,
       badge: null,
-      description: 'View verification logs'
+      description: 'View verification logs',
+      path: '/citizen/verification-history'
     }
   ];
 
@@ -114,21 +133,24 @@ const DashboardSidebar = () => {
       label: 'Wallet',
       icon: Wallet,
       badge: null,
-      description: 'Blockchain wallet'
+      description: 'Blockchain wallet',
+      path: '/citizen/wallet'
     },
     {
       id: 'storage',
       label: 'Decentralized Storage',
       icon: Database,
       badge: null,
-      description: 'IPFS document storage'
+      description: 'IPFS document storage',
+      path: '/citizen/storage'
     },
     {
       id: 'third-party',
       label: 'Third-party Access',
       icon: Users,
       badge: null,
-      description: 'External integrations'
+      description: 'External integrations',
+      path: '/citizen/third-party'
     }
   ];
 
@@ -138,72 +160,83 @@ const DashboardSidebar = () => {
       label: 'Notifications',
       icon: Bell,
       badge: 3,
-      description: 'Notification preferences'
+      description: 'Notification preferences',
+      path: '/citizen/notifications'
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
       badge: null,
-      description: 'Application settings'
+      description: 'Application settings',
+      path: '/citizen/settings'
     }
   ];
 
-  const MenuItem = ({ item, isActive, onClick }) => (
-    <div
-      onClick={() => onClick(item.id)}
-      className={`
-        group relative flex items-center px-3 py-3 mb-1 rounded-xl cursor-pointer transition-all duration-200
-        ${isActive 
-          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-        }
-        ${isCollapsed ? 'justify-center' : 'justify-between'}
-      `}
-    >
-      <div className="flex items-center min-w-0">
-        <item.icon 
-          size={20} 
-          className={`
-            flex-shrink-0 transition-colors duration-200
-            ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'}
-          `}
-        />
-        {!isCollapsed && (
-          <span className="ml-3 font-medium text-sm truncate">
-            {item.label}
-          </span>
+  const MenuItem = ({ item }) => {
+    const navigate = useNavigate();
+
+    const handleClick = (e) => {
+      e.preventDefault();
+      setActiveSection(item.id);
+      navigate(item.path);
+    };
+
+    const isActive = activeSection === item.id;
+
+    return (
+      <div
+        onClick={handleClick}
+        className={`
+          group relative flex items-center px-3 py-3 mb-1 rounded-xl cursor-pointer transition-all duration-200
+          ${isActive
+            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+          }
+          ${isCollapsed ? 'justify-center' : 'justify-between'}
+        `}
+      >
+        <div className="flex items-center min-w-0">
+          <item.icon
+            size={20}
+            className={`flex-shrink-0 transition-colors duration-200`}
+            style={{ color: isActive ? 'white' : undefined }}
+          />
+          {!isCollapsed && (
+            <span className="ml-3 font-medium text-sm truncate">
+              {item.label}
+            </span>
+          )}
+        </div>
+
+        {!isCollapsed && item.badge && (
+          <div className={`flex-shrink-0 ml-2 px-2 py-1 text-xs font-bold rounded-full
+            ${isActive
+              ? 'bg-white bg-opacity-20 text-white'
+              : 'bg-blue-100 text-blue-800'
+            }
+          `}>
+            {item.badge}
+          </div>
+        )}
+
+        {isCollapsed && item.badge && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+            {item.badge}
+          </div>
+        )}
+
+        {/* Tooltip for collapsed state */}
+        {isCollapsed && (
+          <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+            <div className="font-medium">{item.label}</div>
+            <div className="text-xs text-gray-300">{item.description}</div>
+            <div className="absolute top-3 -left-1 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+          </div>
         )}
       </div>
-      
-      {!isCollapsed && item.badge && (
-        <div className={`
-          flex-shrink-0 ml-2 px-2 py-1 text-xs font-bold rounded-full
-          ${isActive 
-            ? 'bg-white bg-opacity-20 text-white' 
-            : 'bg-blue-100 text-blue-800'
-          }
-        `}>
-          {item.badge}
-        </div>
-      )}
-      
-      {isCollapsed && item.badge && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-          {item.badge}
-        </div>
-      )}
-      
-      {/* Tooltip for collapsed state */}
-      {isCollapsed && (
-        <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
-          <div className="font-medium">{item.label}</div>
-          <div className="text-xs text-gray-300">{item.description}</div>
-          <div className="absolute top-3 -left-1 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   const SectionHeader = ({ title, icon: Icon }) => (
     <div className={`
@@ -316,8 +349,6 @@ const DashboardSidebar = () => {
             <MenuItem
               key={item.id}
               item={item}
-              isActive={activeSection === item.id}
-              onClick={setActiveSection}
             />
           ))}
         </div>
@@ -329,8 +360,6 @@ const DashboardSidebar = () => {
             <MenuItem
               key={item.id}
               item={item}
-              isActive={activeSection === item.id}
-              onClick={setActiveSection}
             />
           ))}
         </div>
@@ -342,8 +371,6 @@ const DashboardSidebar = () => {
             <MenuItem
               key={item.id}
               item={item}
-              isActive={activeSection === item.id}
-              onClick={setActiveSection}
             />
           ))}
         </div>
@@ -355,8 +382,6 @@ const DashboardSidebar = () => {
             <MenuItem
               key={item.id}
               item={item}
-              isActive={activeSection === item.id}
-              onClick={setActiveSection}
             />
           ))}
         </div>
@@ -369,10 +394,9 @@ const DashboardSidebar = () => {
             id: 'logout',
             label: 'Sign Out',
             icon: LogOut,
-            description: 'Sign out of your account'
+            description: 'Sign out of your account',
+            path: '/logout'
           }}
-          isActive={false}
-          onClick={() => console.log('Logout clicked')}
         />
       </div>
     </div>

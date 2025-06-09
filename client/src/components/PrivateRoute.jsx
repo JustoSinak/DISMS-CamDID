@@ -19,6 +19,11 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login-as" state={{ from: location }} replace />;
   }
 
+  // Allow access to create-identity page regardless of role
+  if (location.pathname === '/create-identity') {
+    return children;
+  }
+
   // Check if user is trying to access the correct dashboard for their role
   const currentPath = location.pathname;
   const userRole = user?.role;

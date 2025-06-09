@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Logo from '../assets/CamDID.svg';
 import f1 from '../assets/f1.jpg';
-import { Settings2Icon, Lock, Mail, Phone, MapPin, Smartphone, Globe, Users, CheckCircle, ArrowRight, Zap, QrCode, Shield, Key } from 'lucide-react';
+import { Lock, Mail, Phone, MapPin, CheckCircle, ArrowRight, QrCode, Shield, Key } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 
@@ -15,22 +15,22 @@ const Home = () => {
 
   const features = [
     {
-      icon: Shield,
+      icon: <Shield className="w-8 h-8 text-violet-600" />,
       title: 'Secure Identity Management',
       description: 'Your digital identity is protected with state-of-the-art encryption'
     },
     {
-      icon: Key,
+      icon: <Key className="w-8 h-8 text-orange-400" />,
       title: 'Full Control',
       description: 'You decide who can access your credentials and when'
     },
     {
-      icon: Lock,
+      icon: <Lock className="w-8 h-8 text-red-600" />,
       title: 'Privacy First',
       description: 'Your data is encrypted and only accessible by you'
     },
     {
-      icon: CheckCircle,
+      icon: <CheckCircle className="w-8 h-8 text-blue-600" />,
       title: 'Government Verified',
       description: 'All credentials are officially verified and trusted'
     }
@@ -205,36 +205,23 @@ const Home = () => {
             theme === 'dark' ? 'text-gray-400' : 'text-emerald-700'
           }`}>Why Choose CamDID?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
+            {features.map((feature, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ y: -10, scale: 1.03 }}
-                  className={`${
-                    theme === 'dark' ? 'bg-gray-800 shadow-lg shadow-gray-900/50 border-l-4 border-emerald-400 text-gray-100' : 'bg-white shadow-lg border-l-4 border-emerald-400 text-emerald-800'
-                  } p-8 rounded-lg`}
+                  className={`${theme === 'dark' ? 'bg-gray-800 shadow-lg shadow-gray-900/50 border-l-4 border-violet-400 text-gray-100' : 'bg-white shadow-lg border-l-4 border-emerald-400 text-emerald-800'} p-8 rounded-lg`}
                 >
                   <div className="flex justify-center mb-4">
-                    <Icon className={`h-6 w-6 ${
-                      theme === 'dark'
-                        ? 'text-emerald-400'
-                        : 'text-emerald-600'
-                    }`} />
+                    {feature.icon}
                   </div>
-                  <h3 className={`text-xl font-bold mb-2 ${
-                    theme === 'dark' ? 'text-gray-100' : 'text-emerald-700'
-                  }`}>
+                  <h3 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-gray-100' : 'text-emerald-700'}`}>
                     {feature.title}
                   </h3>
-                  <p className={`${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                     {feature.description}
                   </p>
                 </motion.div>
-              );
-            })}
+              ))}
           </div>
         </div>
       </section>

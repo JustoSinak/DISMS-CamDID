@@ -1,133 +1,140 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import PrivateRoute from './components/common/PrivateRoute';
-import AdminRoute from './components/common/AdminRoute';
-
-// Auth Components
+import Register from './components/auth/Register';
 import Login from './components/auth/Login';
-import RegisterCitizen from './components/auth/RegisterCitizen';
-import RegisterVerifier from './components/auth/RegisterVerifier';
-import RegisterIssuer from './components/auth/RegisterIssuer';
 import RoleSelection from './components/auth/RoleSelection';
-
-// Main Components
+import CitizenDashboard from './components/dashboard/CitizenDashboard';
+import VerifierDashboard from './components/dashboard/VerifierDashboard';
+import IssuerDashboard from './components/dashboard/IssuerDashboard';
+import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Contact from './pages/Contact';
 import About from './pages/About';
 import FAQ from './pages/FAQ';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
+import Contact from './pages/Contact';
+import CreateIdentity from './pages/CreateIdentity';
+import { Web3Provider } from './contexts/Web3Context';
+import { ThemeProvider } from './contexts/ThemeContext';
+import Layout from './components/Layout';
 
-// Role-specific Components
-import CitizenDashboard from './pages/citizen/Dashboard';
-import IssuerDashboard from './pages/issuer/Dashboard';
-import VerifierDashboard from './pages/verifier/Dashboard';
+// Wrap component with Layout if it's a page that should have the common layout
+const withLayout = (Component) => {
+  return (props) => (
+    <Layout>
+      <Component {...props} />
+    </Layout>
+  );
+};
 
 function App() {
   return (
-    <Router>
+    <ThemeProvider>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faq" element={<FAQ />} />
-          
-          {/* Auth Routes */}
-          <Route path="/login-as" element={<RoleSelection mode="login" />} />
-          <Route path="/register-as" element={<RoleSelection mode="register" />} />
-          <Route path="/login/:role" element={<Login />} />
-          
-          {/* Role-specific Registration Routes */}
-          <Route path="/register/citizen" element={<RegisterCitizen />} />
-          <Route path="/register/verifier" element={<RegisterVerifier />} />
-          <Route path="/register/issuer" element={<RegisterIssuer />} />
-          
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Role-specific Routes */}
-          <Route
-            path="/citizen/*"
-            element={
-              <PrivateRoute requiredRole="citizen">
-                <CitizenDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/issuer/*"
-            element={
-              <PrivateRoute requiredRole="issuer">
-                <IssuerDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/verifier/*"
-            element={
-              <PrivateRoute requiredRole="verifier">
-                <VerifierDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/admin/*"
-            element={
-              <AdminRoute>
-                <Admin />
-              </AdminRoute>
-            }
-          />
-
-          {/* Redirect /login and /register to role selection */}
-          <Route path="/login" element={<Navigate to="/login-as" replace />} />
-          <Route path="/register" element={<Navigate to="/register-as" replace />} />
-
-          {/* Redirect authenticated users based on their role */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                {({ user }) => {
-                  switch (user.role) {
-                    case 'citizen':
-                      return <Navigate to="/citizen/dashboard" replace />;
-                    case 'issuer':
-                      return <Navigate to="/issuer/dashboard" replace />;
-                    case 'verifier':
-                      return <Navigate to="/verifier/dashboard" replace />;
-                    case 'admin':
-                      return <Navigate to="/admin/dashboard" replace />;
-                    default:
-                      return <Dashboard />;
-                  }
-                }}
-              </PrivateRoute>
-            }
-          />
-        </Routes>
+        <Web3Provider>
+          <Router>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={withLayout(Home)()} />
+              <Route path="/about" element={withLayout(About)()} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/contact" element={withLayout(Contact)()} />
+              <Route path="/create-identity" element={
+                <PrivateRoute>
+                  {withLayout(CreateIdentity)()}
+                </PrivateRoute>
+              } />
+              
+              {/* Role selection routes */}
+              <Route path="/register-as" element={<RoleSelection />} />
+              <Route path="/login-as" element={<RoleSelection />} />
+              
+              {/* Role-specific auth routes */}
+              <Route path="/register/:role" element={<Register />} />
+              <Route path="/login/:role" element={<Login />} />
+              
+              {/* Protected dashboard routes */}
+              <Route
+                path="/dashboard/citizen"
+                element={
+                  <PrivateRoute>
+                    <CitizenDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/dashboard/verifier"
+                element={
+                  <PrivateRoute>
+                    <VerifierDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/dashboard/issuer"
+                element={
+                  <PrivateRoute>
+                    <IssuerDashboard />
+                  </PrivateRoute>
+                }
+              />
+              
+              {/* Redirect /dashboard to role selection if no role specified */}
+              <Route path="/dashboard" element={<Navigate to="/login-as" replace />} />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </Web3Provider>
       </AuthProvider>
-    </Router>
+    </ThemeProvider>
   );
 }
 
-export default App; 
+export default App;
+
+// import React from 'react';
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import Home from './components/Home';
+// import Login from './components/auth/Login';
+// import Register from './components/auth/Register';
+// 
+
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/" element={<Home />} />
+//         <Route path="/login" element={<Login />} />
+//         <Route path="/register" element={<Register />} />
+//         <Route path="/dashboard" element={<Dashboard />} />
+//         {/* Add more routes as needed */}
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// export default App;
+
+
+// import React from 'react';
+// import { Routes, Route, Navigate } from 'react-router-dom';
+// import Home from './pages/Home';
+// import './App.css';
+
+// function App() {
+//   return (
+//     <div className="App">
+//       <div className="container mx-auto px-4 py-6">
+//         <Routes>
+//           <Route path="/" element={<Home />} />
+//           <Route path="/login" element={<div><h2>Login Page</h2><p>Login page is under construction.</p></div>} />
+//           <Route path="/register" element={<div><h2>Register Page</h2><p>Register page is under construction.</p></div>} />
+//           <Route path="*" element={<Navigate to="/" replace />} />
+//         </Routes>
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default App;

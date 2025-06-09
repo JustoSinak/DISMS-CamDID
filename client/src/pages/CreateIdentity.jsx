@@ -8,6 +8,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import Loader from '../components/common/Loader';
+import identityService from '../services/identityService';
 
 const CreateIdentity = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const CreateIdentity = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
     nationalIdNumber: '',
@@ -34,6 +36,12 @@ const CreateIdentity = () => {
   const [formErrors, setFormErrors] = useState({});
   const [previewIdCard, setPreviewIdCard] = useState(null);
   const [previewSelfie, setPreviewSelfie] = useState(null);
+  const [processingStatus, setProcessingStatus] = useState({
+    verifyingId: false,
+    generatingDid: false,
+    creatingCredential: false,
+    storingCredential: false
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -139,25 +147,39 @@ const CreateIdentity = () => {
     setSuccess('');
 
     try {
-      const submitData = new FormData();
-      Object.keys(formData).forEach(key => {
-        submitData.append(key, formData[key]);
-      });
-      submitData.append('walletAddress', account);
-
-      const response = await fetch('/api/identity/create', {
-        method: 'POST',
-        body: submitData,
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        }
+      // Step 1: Verify National ID
+      setProcessingStatus(prev => ({ ...prev, verifyingId: true }));
+      const verificationResult = await identityService.verifyNationalId({
+        nationalIdNumber: formData.nationalIdNumber,
+        dateOfBirth: formData.dateOfBirth,
+        idCardImage: formData.idCardImage
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create identity');
+      if (!verificationResult.verified) {
+        throw new Error('ID verification failed. Please check your information and try again.');
       }
 
-      const data = await response.json();
+      // Step 2: Generate DID
+      setProcessingStatus(prev => ({ ...prev, verifyingId: false, generatingDid: true }));
+      const { did, didDocument } = await identityService.generateIdentity(web3, account);
+
+      // Step 3: Create and Issue Credential
+      setProcessingStatus(prev => ({ ...prev, generatingDid: false, creatingCredential: true }));
+      const { vc } = await identityService.issueCredential(web3, did, {
+        nationalIdNumber: formData.nationalIdNumber,
+        dateOfBirth: formData.dateOfBirth,
+        placeOfBirth: formData.placeOfBirth,
+        nationality: formData.nationality,
+        gender: formData.gender,
+        address: formData.address,
+        city: formData.city,
+        region: formData.region,
+        phoneNumber: formData.phoneNumber
+      }, account);
+
+      // Step 4: Store Credential
+      setProcessingStatus(prev => ({ ...prev, creatingCredential: false, storingCredential: true }));
+      await identityService.storeCredential(vc);
 
       setSuccess('Digital identity created successfully! Redirecting to dashboard...');
       setTimeout(() => {
@@ -167,7 +189,41 @@ const CreateIdentity = () => {
       setError(err.message || 'Failed to create digital identity');
     } finally {
       setLoading(false);
+      setProcessingStatus({
+        verifyingId: false,
+        generatingDid: false,
+        creatingCredential: false,
+        storingCredential: false
+      });
     }
+  };
+
+  const renderProcessingStatus = () => {
+    if (!loading) return null;
+
+    return (
+      <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-3">Processing Status</h3>
+        <ul className="space-y-2">
+          <li className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${processingStatus.verifyingId ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+            Verifying National ID
+          </li>
+          <li className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${processingStatus.generatingDid ? 'bg-blue-500 animate-pulse' : processingStatus.verifyingId ? 'bg-gray-300' : 'bg-green-500'}`} />
+            Generating Digital Identity
+          </li>
+          <li className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${processingStatus.creatingCredential ? 'bg-blue-500 animate-pulse' : processingStatus.generatingDid ? 'bg-gray-300' : 'bg-green-500'}`} />
+            Creating Verifiable Credential
+          </li>
+          <li className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${processingStatus.storingCredential ? 'bg-blue-500 animate-pulse' : processingStatus.creatingCredential ? 'bg-gray-300' : 'bg-green-500'}`} />
+            Storing in Digital Wallet
+          </li>
+        </ul>
+      </div>
+    );
   };
 
   return (
@@ -191,6 +247,8 @@ const CreateIdentity = () => {
               {success}
             </div>
           )}
+
+          {renderProcessingStatus()}
 
           {web3Loading ? (
             <div className="flex justify-center items-center py-8">

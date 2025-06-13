@@ -51,7 +51,7 @@ const Contact = () => {
   return (
     <div>
       <Navbar />
-      <div className={`min-h-screen ${
+      <div className={`min-h-screen py-20 ${
         theme === 'dark'
           ? 'bg-gray-900'
           : 'bg-gray-50'

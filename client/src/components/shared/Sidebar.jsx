@@ -179,7 +179,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     const handleClick = (e) => {
       e.preventDefault();
       setActiveSection(item.id);
-      navigate(item.path);
+        navigate(item.path);
     };
 
     const isActive = activeSection === item.id;

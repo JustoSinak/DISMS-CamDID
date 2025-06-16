@@ -1,0 +1,29 @@
+{
+  "server": {
+    "port": 3000,
+    "environment": "development",
+    "logLevel": "debug"
+  },
+  "database": {
+    "uri": "mongodb://localhost:27017/disms-camdid",
+    "options": {
+      "useNewUrlParser": true,
+      "useUnifiedTopology": true
+    }
+  },
+  "blockchain": {
+    "provider": "http://localhost:8545",
+    "contractAddress": "YOUR_CONTRACT_ADDRESS",
+    "ownerAddress": "YOUR_OWNER_ADDRESS",
+    "network": "development"
+  },
+  "security": {
+    "jwtSecret": "YOUR_JWT_SECRET",
+    "encryptionKey": "YOUR_ENCRYPTION_KEY",
+    "passwordSaltRounds": 10
+  },
+  "api": {
+    "baseUrl": "http://localhost:3000/api",
+    "version": "1.0.0"
+  }
+}

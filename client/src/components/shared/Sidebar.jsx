@@ -64,7 +64,15 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       icon: Shield,
       badge: null,
       description: 'Manage your digital identity',
-      path: '/citizen/my-identity'
+      path: '/my-identity'
+    },
+
+    // Add a new route for identity management
+    {
+      id: 'my-identity',
+      path: '/my-identity',
+      // component: MyIdentity
+      // Removed component reference to avoid undefined error
     },
     {
       id: 'credentials',

@@ -17,13 +17,12 @@ const UserDashboard = () => {
     setIsCollapsed(collapsed);
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50">
+  return (    <div className="flex h-screen bg-gray-50">
       <Sidebar onCollapseChange={handleCollapseChange} />
       
       {/* Main Content */}
-      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-80'}`}>
-        <div className="p-8">
+      <main className={`flex-1 overflow-y-auto transition-all duration-300 lg:${isCollapsed ? 'ml-20' : 'ml-80'}`}>
+        <div className="p-4 lg:p-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-emerald-600">Hey Welcome to your Dashboard</h1>

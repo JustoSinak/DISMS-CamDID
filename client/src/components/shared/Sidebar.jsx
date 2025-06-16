@@ -23,8 +23,6 @@ import {
   X
 } from 'lucide-react';
 
-// Component implementation
-
 const DashboardSidebar = ({ onCollapseChange }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -70,6 +68,8 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     // Add a new route for identity management
     {
       id: 'my-identity',
+      label: 'My Identity',
+      icon: Shield,
       path: '/my-identity',
       // component: MyIdentity
       // Removed component reference to avoid undefined error

@@ -26,12 +26,24 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://cam-did-sib8.vercel.app']  // Updated with your deployed frontend URL
-    : ['http://localhost:3000'],
-  credentials: true
-}));
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests from your frontend domain
+    if (origin === 'https://cam-did-sib8.vercel.app' || 
+        origin === 'http://localhost:3000' ||
+        !origin) { // Allow direct requests without origin
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

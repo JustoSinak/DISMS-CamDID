@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-// import { useAuth } from '../hooks/useAuth';
+import { useWeb3 } from '../contexts/Web3Context';
 import logo from '../assets/CamDID.png';
 import user from '../assets/f1.jpg';
 
@@ -14,59 +14,20 @@ import user from '../assets/f1.jpg';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
-  // const { user, logout } = useAuth();
+  const { account, connectWallet, isConnecting } = useWeb3();
 
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        if (window.ethereum) {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          setIsConnected(accounts && accounts.length > 0);
-
-          window.ethereum.on('accountsChanged', (accounts) => {
-            setIsConnected(accounts && accounts.length > 0);
-          });
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
-        setIsConnected(false);
-      }
-    };
-
-    checkConnection();
-
     const fetchNotifications = async () => {
       setNotificationCount(3);
     };
 
     fetchNotifications();
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', () => {});
-      }
-    };
   }, []);
 
-  const connectWallet = async () => {
-    try {
-      if (window.ethereum) {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setIsConnected(true);
-      } else {
-        alert('Please install MetaMask or another Ethereum wallet to connect.');
-      }
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-    }
-  };
-
   const handleLogout = () => {
-    // logout();
     setIsDropdownOpen(false);
   };
 
@@ -144,7 +105,7 @@ const Header = () => {
           <div className="hidden md:flex items-center">
             {/* Wallet connection status */}
             <div className="mr-4">
-              {isConnected ? (
+              {account ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#198C43]/20 text-[#198C43] border border-[#198C43]">
                   <span className="h-2 w-2 mr-1 bg-[#198C43] rounded-full"></span>
                   Wallet Connected
@@ -152,9 +113,12 @@ const Header = () => {
               ) : (
                 <button
                   onClick={connectWallet}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-[#198C43] hover:bg-[#174075] transition"
+                  disabled={isConnecting}
+                  className={`inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-[#198C43] hover:bg-[#174075] transition ${
+                    isConnecting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Connect Wallet
+                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
                 </button>
               )}
             </div>
@@ -249,7 +213,7 @@ const Header = () => {
           <div className="flex items-center md:hidden">
             {/* Wallet connection status (mobile) */}
             <div className="mr-2">
-              {isConnected ? (
+              {account ? (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#198C43]/20 text-[#198C43] border border-[#198C43]">
                   <span className="h-1.5 w-1.5 mr-1 bg-[#198C43] rounded-full"></span>
                   Connected
@@ -257,9 +221,12 @@ const Header = () => {
               ) : (
                 <button
                   onClick={connectWallet}
-                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-[#198C43] hover:bg-[#174075] transition"
+                  disabled={isConnecting}
+                  className={`inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-[#198C43] hover:bg-[#174075] transition ${
+                    isConnecting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Connect
+                  {isConnecting ? 'Connecting...' : 'Connect'}
                 </button>
               )}
             </div>

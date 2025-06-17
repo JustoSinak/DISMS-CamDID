@@ -62,21 +62,21 @@ class ApiService {
   
     // User API methods
     async registerUser(userData) {
-      return this.apiCall('/users/register', {
+      return this.apiCall('/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData)
       });
     }
   
     async loginUser(credentials) {
-      return this.apiCall('/users/login', {
+      return this.apiCall('/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials)
       });
     }
   
     async getUserProfile() {
-      return this.apiCall('/users/profile');
+      return this.apiCall('/auth/profile');
     }
   
     // Credential API methods
@@ -90,4 +90,3 @@ class ApiService {
   }
   
   export default new ApiService();
-  

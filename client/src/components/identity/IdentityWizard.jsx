@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIdentity } from '../../contexts/IdentityContext';
 import { useWeb3 } from '../../contexts/Web3Context';
 import { Button } from '../../components/common/Button';
@@ -17,30 +17,44 @@ import {
   AlertCircle,
   Upload,
   Camera,
-  X
+  X,
+  Fingerprint,
+  Lock
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
+import crypto from 'crypto';
+import jsSHA from 'jssha';
+import { createCredential } from '../../utils/credentialUtils';
+import { generateDID } from '../../utils/didUtils';
+import { livenessDetection } from '../../utils/livenessDetection';
+import { enrollBiometrics } from '../../utils/biometrics';
 
 const IdentityWizard = () => {
   const { account } = useWeb3();
   const { createIdentity, loading, error } = useIdentity();
   const [formData, setFormData] = useState({
     fullName: '',
-    nationalIdNumber: '',
-    dateOfBirth: '',
-    email: '',
-    phoneNumber: '',
-    address: '',
-    city: '',
-    region: '',
+    cniNumber: '',
+    placeOfBirth: '',
+    dateOfIssue: '',
     idCardImage: null,
-    selfieImage: null
+    selfieImage: null,
+    fingerprintData: null,
+    faceTemplate: null,
+    pin: '',
+    secretQuestion: '',
+    secretAnswer: ''
   });
   const [previewIdCard, setPreviewIdCard] = useState(null);
   const [previewSelfie, setPreviewSelfie] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [success, setSuccess] = useState('');
   const [walletError, setWalletError] = useState('');
+  const [livenessVerified, setLivenessVerified] = useState(false);
+  const [biometricsEnrolled, setBiometricsEnrolled] = useState(false);
+  const [did, setDID] = useState('');
+  const [credential, setCredential] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +81,11 @@ const IdentityWizard = () => {
     }
   };
 
+  const validateCNI = (cni) => {
+    const cniRegex = /^[0-9]{9}[A-Z][0-9]{3}$/;
+    return cniRegex.test(cni);
+  };
+
   const handleSubmit = async () => {
     if (!account) {
       setWalletError('Please connect your wallet first');
@@ -74,31 +93,86 @@ const IdentityWizard = () => {
     }
 
     try {
-      const credentialData = {
-        id: `did:sol:${account}`,
-        type: ['VerifiableCredential', 'NationalIDCredential'],
-        issuer: account,
-        issuanceDate: new Date().toISOString(),
-        credentialSubject: {
-          id: `did:sol:${account}`,
-          fullName: formData.fullName,
-          nationalIdNumber: formData.nationalIdNumber,
-          dateOfBirth: formData.dateOfBirth,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          address: formData.address,
-          city: formData.city,
-          region: formData.region,
-          idCardImage: formData.idCardImage,
-          selfieImage: formData.selfieImage
-        }
-      };
+      // Step 1: CNI Validation
+      if (!validateCNI(formData.cniNumber)) {
+        throw new Error('Invalid CNI number format');
+      }
 
-      await createIdentity(credentialData);
+      // Step 2: MINATD API Verification
+      const minatdResponse = await axios.post('/api/minatd/verify', {
+        cniNumber: formData.cniNumber
+      });
+
+      if (!minatdResponse.data.valid) {
+        throw new Error('CNI number not verified by MINATD');
+      }
+
+      // Step 3: Liveness Detection
+      if (!livenessVerified) {
+        const livePhoto = await livenessDetection(formData.selfieImage);
+        if (!livePhoto.verified) {
+          throw new Error('Liveness detection failed');
+        }
+      }
+
+      // Step 4: Biometric Enrollment
+      if (!biometricsEnrolled) {
+        const { fingerprintData, faceTemplate } = await enrollBiometrics();
+        setFormData(prev => ({
+          ...prev,
+          fingerprintData,
+          faceTemplate
+        }));
+      }
+
+      // Step 5: DID Generation
+      const cniHash = crypto.createHash('sha256')
+        .update(formData.cniNumber)
+        .digest('hex');
+      
+      const did = `did:cmr:${cniHash}:${account.slice(2, 10)}`;
+      setDID(did);
+
+      // Step 6: Credential Generation
+      const credential = await createCredential({
+        '@context': ['https://schema.cmr.gov.cm/v1/national-id'],
+        type: ['NationalIDCredential'],
+        issuer: 'did:cmr:gov:issuer',
+        credentialSubject: {
+          id: did,
+          cniNumber: formData.cniNumber,
+          fullName: formData.fullName,
+          placeOfBirth: formData.placeOfBirth,
+          dateOfIssue: formData.dateOfIssue,
+          issuingAuthority: 'MINATD'
+        },
+        proof: {
+          type: 'Ed25519Signature2020',
+          verificationMethod: 'did:cmr:gov:issuer#key-1'
+        }
+      });
+      setCredential(credential);
+
+      // Step 7: Store Identity
+      await createIdentity({
+        did,
+        credential,
+        metadata: {
+          pin: formData.pin,
+          secretQuestion: formData.secretQuestion,
+          secretAnswer: formData.secretAnswer
+        },
+        biometrics: {
+          fingerprintData: formData.fingerprintData,
+          faceTemplate: formData.faceTemplate
+        }
+      });
+
       setSuccess('Identity created successfully!');
+      toast.success('Identity created successfully!');
     } catch (err) {
       console.error('Identity creation error:', err);
-      setSuccess('Failed to create identity');
+      toast.error(err.message || 'Failed to create identity');
     }
   };
 

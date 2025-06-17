@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, Shield, AlertCircle } from 'lucide-react';
+import { User } from 'lucide-react';
 import Sidebar from '../shared/Sidebar';
 
 const UserDashboard = () => {
@@ -22,11 +22,7 @@ const UserDashboard = () => {
     };
 
     window.addEventListener('resize', handleResize);
-
-    // Initial check
-    if (window.innerWidth < 768) {
-      setIsCollapsed(true);
-    }
+    if (window.innerWidth < 768) setIsCollapsed(true);
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -39,22 +35,26 @@ const UserDashboard = () => {
     setIsCollapsed(collapsed);
   };
 
-  // Determine main content margin based on sidebar state and screen size
-  const mainContentMarginClass = () => {
+  // Sidebar width based on collapse state
+  const sidebarWidth = isCollapsed ? 'w-20' : 'w-64';
+
+  // Adjust sidebar width for mobile
+  useEffect(() => {
     if (windowWidth < 768) {
-      // On small screens, no margin-left, sidebar overlays content
-      return 'ml-0';
+      setIsCollapsed(true);
     }
-    return isCollapsed ? 'ml-20' : 'ml-80';
-  };
+  }, [windowWidth]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar onCollapseChange={handleCollapseChange} />
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Sidebar */}
+      <div className={`transition-all duration-300 ${sidebarWidth} shrink-0`}>
+        <Sidebar onCollapseChange={setIsCollapsed} />
+      </div>
 
       {/* Main Content */}
-      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${mainContentMarginClass()}`}>
-        <div className="p-8">
+      <main className="flex-1 overflow-y-auto transition-all duration-300">
+        <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-emerald-600">Hey Welcome to your Dashboard</h1>
@@ -64,7 +64,7 @@ const UserDashboard = () => {
           {/* Identity Management Section */}
           <div className="mb-8">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">Identity Management</h2>
                   <p className="text-gray-500 mt-1">Create and manage your digital identity</p>
@@ -94,48 +94,29 @@ const UserDashboard = () => {
 
           {/* Stats Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Credentials</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">12</p>
-                </div>
-                <div className="text-green-600">
-                  <span className="text-sm font-medium">+2</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Verifications</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">24</p>
-                </div>
-                <div className="text-green-600">
-                  <span className="text-sm font-medium">+5</span>
+            {[
+              { label: "Total Credentials", value: 12, change: "+2" },
+              { label: "Verifications", value: 24, change: "+5" },
+              { label: "Trust Score", value: "98%", change: "+0.5%" },
+            ].map((stat, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                    <p className="text-2xl font-semibold text-gray-900 mt-1">{stat.value}</p>
+                  </div>
+                  <div className="text-green-600">
+                    <span className="text-sm font-medium">{stat.change}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Trust Score</p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-1">98%</p>
-                </div>
-                <div className="text-green-600">
-                  <span className="text-sm font-medium">+0.5%</span>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Recent Activity Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
             <div className="space-y-4">
-              {/* Activity items would go here */}
               <p className="text-gray-500 text-sm">No recent activity</p>
             </div>
           </div>

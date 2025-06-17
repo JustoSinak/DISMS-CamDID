@@ -1,82 +1,126 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import Web3 from 'web3';
+import { BrowserProvider } from 'ethers';
+import { toast } from 'react-toastify';
 
-const Web3Context = createContext();
+const Web3Context = createContext(null);
 
 export const Web3Provider = ({ children }) => {
   const [web3, setWeb3] = useState(null);
-  const [contract, setContract] = useState(null);
   const [account, setAccount] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [network, setNetwork] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize web3
   useEffect(() => {
     const initializeWeb3 = async () => {
+      if (isInitialized) return;
+      
       try {
-        // Check if MetaMask is installed
         if (window.ethereum) {
-          const web3Instance = new Web3(window.ethereum);
+          const provider = new BrowserProvider(window.ethereum);
+          setWeb3(provider);
           
-          // Request account access
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          
-          // Get the current account
-          const accounts = await web3Instance.eth.getAccounts();
-          setAccount(accounts[0]);
-          
-          // Set up event listener for account changes
-          window.ethereum.on('accountsChanged', (accounts) => {
+          // Check if already connected
+          const accounts = await provider.send('eth_accounts', []);
+          if (accounts.length > 0) {
             setAccount(accounts[0]);
+          }
+
+          // Listen for account changes
+          window.ethereum.on('accountsChanged', (accounts) => {
+            if (accounts.length > 0) {
+              setAccount(accounts[0]);
+            } else {
+              setAccount(null);
+            }
           });
 
-          setWeb3(web3Instance);
-          setLoading(false);
+          // Listen for network changes
+          window.ethereum.on('chainChanged', (chainId) => {
+            setNetwork(chainId);
+          });
+
+          setIsInitialized(true);
         } else {
-          throw new Error('Please install MetaMask to use this application');
+          setError('MetaMask is not installed');
+          toast.error('Please install MetaMask to use this application');
         }
       } catch (err) {
         setError(err.message);
-        setLoading(false);
+        toast.error('Error initializing web3: ' + err.message);
       }
     };
 
     initializeWeb3();
 
-    // Cleanup function
     return () => {
       if (window.ethereum) {
         window.ethereum.removeAllListeners('accountsChanged');
+        window.ethereum.removeAllListeners('chainChanged');
       }
     };
-  }, []);
+  }, [isInitialized]);
 
   const connectWallet = async () => {
+    // Prevent concurrent connection attempts
+    if (isConnecting) {
+      toast.info('Wallet connection in progress...');
+      return false;
+    }
+
     try {
+      setIsConnecting(true);
+      setLoading(true);
       if (!window.ethereum) {
-        throw new Error('Please install MetaMask to use this application');
+        throw new Error('MetaMask is not installed');
       }
 
+      // Request accounts
       const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
+        method: 'eth_requestAccounts'
       });
-      setAccount(accounts[0]);
+
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        setLoading(false);
+        toast.success('Wallet connected successfully');
+        return true;
+      } else {
+        throw new Error('No accounts returned from MetaMask');
+      }
     } catch (err) {
       setError(err.message);
+      toast.error('Error connecting wallet: ' + err.message);
+      setLoading(false);
+      return false;
+    } finally {
+      setIsConnecting(false);
     }
   };
 
-  const value = {
-    web3,
-    contract,
-    account,
-    loading,
-    error,
-    connectWallet,
-    setContract
+  const disconnectWallet = () => {
+    setAccount(null);
+    setNetwork(null);
+    setError(null);
   };
 
   return (
-    <Web3Context.Provider value={value}>
+    <Web3Context.Provider
+      value={{
+        web3,
+        account,
+        network,
+        loading,
+        error,
+        connectWallet,
+        disconnectWallet,
+        isConnecting,
+        isInitialized
+      }}
+    >
       {children}
     </Web3Context.Provider>
   );

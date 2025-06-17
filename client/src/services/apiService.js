@@ -9,7 +9,29 @@ export class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 10000, // 10 second timeout
+      withCredentials: true
     });
+
+    // Add error interceptor
+    this.api.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response) {
+          // Server responded with status >= 400
+          console.error('API Error:', error.response.data);
+          throw error.response.data;
+        } else if (error.request) {
+          // Request made but no response
+          console.error('Network Error:', error.message);
+          throw new Error('Network error. Please check your internet connection.');
+        } else {
+          // Error in setting up the request
+          console.error('Request Error:', error.message);
+          throw new Error('Failed to make request. Please try again.');
+        }
+      }
+    );
   }
 
   async generateDid(encryptedData) {

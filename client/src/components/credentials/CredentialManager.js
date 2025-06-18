@@ -3,6 +3,8 @@ import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Plus, Search, Filter } from 'lucide-react';
 import CredentialCard from './CredentialCard';
+import ShareCredentialDialog from './ShareCredentialDialog';
+import UploadCredentialDialog from './UploadCredentialDialog';
 import { useIdentity } from '../../contexts/IdentityContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWeb3 } from '../../contexts/Web3Context';
@@ -14,6 +16,9 @@ const CredentialManager = () => {
   const [filteredCredentials, setFilteredCredentials] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedCredential, setSelectedCredential] = useState(null);
 
   useEffect(() => {
     // Fetch credentials when component mounts
@@ -41,13 +46,9 @@ const CredentialManager = () => {
     }
   };
 
-  const handleShareCredential = async (credentialId) => {
-    try {
-      // TODO: Implement sharing logic
-      // This will open a modal to select recipient
-    } catch (error) {
-      console.error('Error sharing credential:', error);
-    }
+  const handleShareCredential = (credential) => {
+    setSelectedCredential(credential);
+    setShareDialogOpen(true);
   };
 
   const handleViewCredential = async (credential) => {
@@ -65,7 +66,7 @@ const CredentialManager = () => {
         <h2 className="text-2xl font-bold text-gray-900">Credentials</h2>
         <Button
           variant="primary"
-          onClick={() => {/* TODO: Open credential issuance modal */}}
+          onClick={() => setUploadDialogOpen(true)}
         >
           <Plus className="w-4 h-4 mr-2" />
           Issue New Credential
@@ -116,7 +117,7 @@ const CredentialManager = () => {
           <CredentialCard
             key={credential.id}
             credential={credential}
-            onShare={() => handleShareCredential(credential.id)}
+            onShare={() => handleShareCredential(credential)}
             onRevoke={() => handleRevokeCredential(credential.id)}
             onView={() => handleViewCredential(credential)}
           />
@@ -128,6 +129,21 @@ const CredentialManager = () => {
           </div>
         )}
       </div>
+
+      {/* Share Credential Dialog */}
+      {selectedCredential && (
+        <ShareCredentialDialog
+          credential={selectedCredential}
+          open={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+        />
+      )}
+
+      {/* Upload Credential Dialog */}
+      <UploadCredentialDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+      />
     </div>
   );
 };

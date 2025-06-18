@@ -3,15 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../../assets/CamDID.svg';
 import { 
-  User, 
-  Settings, 
-  LogOut, 
-  Bell, 
-  Wallet, 
-  FileText, 
-  Share2, 
-  Home,
-  ChevronDown,
+  User, Settings, LogOut, Bell, Wallet, FileText, Share2, Home,ChevronDown,
   Menu,
   X
 } from 'lucide-react';
@@ -34,6 +26,7 @@ const DashboardNavbar = () => {
     { to: "/credentials", icon: <FileText className="w-4 h-4" />, text: "Credentials" },
     { to: "/create-identity", icon: <FileText className="w-4 h-4" />, text: "Create Credential" },
     { to: "/share", icon: <Share2 className="w-4 h-4" />, text: "Share" },
+    { to: "/userdashboard", icon: <User className="w-4 h-4" />, text: "User Dashboard" },
   ];
 
   return (

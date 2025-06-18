@@ -13,9 +13,12 @@ import About from './pages/About';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
 import CreateIdentity from './pages/CreateIdentity';
+import UserDashboard from './components/dashboard/UserDashboard';
 import { Web3Provider } from './contexts/Web3Context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
+import Credentials from './pages/citizen/Credentials';
+import CreateCredential from './pages/citizen/CreateCredential';
 
 // Wrap component with Layout if it's a page that should have the common layout
 const withLayout = (Component) => {
@@ -81,9 +84,23 @@ function App() {
               {/* Redirect /dashboard to role selection if no role specified */}
               <Route path="/dashboard" element={<Navigate to="/login-as" replace />} />
               
+              {/* Credential routes */}
+              <Route path="/citizen/credentials" element={<Credentials />} />
+              <Route path="/citizen/credentials/create" element={<CreateCredential />} />
+              
+              <Route
+              path="/userdashboard"
+              element={
+                <PrivateRoute>
+                  {withLayout(UserDashboard)()}
+                </PrivateRoute>
+              }
+            />
+
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+
           </Router>
         </Web3Provider>
       </AuthProvider>
@@ -93,48 +110,3 @@ function App() {
 
 export default App;
 
-// import React from 'react';
-// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import Home from './components/Home';
-// import Login from './components/auth/Login';
-// import Register from './components/auth/Register';
-// 
-
-// function App() {
-//   return (
-//     <Router>
-//       <Routes>
-//         <Route path="/" element={<Home />} />
-//         <Route path="/login" element={<Login />} />
-//         <Route path="/register" element={<Register />} />
-//         <Route path="/dashboard" element={<Dashboard />} />
-//         {/* Add more routes as needed */}
-//       </Routes>
-//     </Router>
-//   );
-// }
-
-// export default App;
-
-
-// import React from 'react';
-// import { Routes, Route, Navigate } from 'react-router-dom';
-// import Home from './pages/Home';
-// import './App.css';
-
-// function App() {
-//   return (
-//     <div className="App">
-//       <div className="container mx-auto px-4 py-6">
-//         <Routes>
-//           <Route path="/" element={<Home />} />
-//           <Route path="/login" element={<div><h2>Login Page</h2><p>Login page is under construction.</p></div>} />
-//           <Route path="/register" element={<div><h2>Register Page</h2><p>Register page is under construction.</p></div>} />
-//           <Route path="*" element={<Navigate to="/" replace />} />
-//         </Routes>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default App;

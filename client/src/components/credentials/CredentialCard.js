@@ -40,6 +40,13 @@ const CredentialCard = ({ credential, onShare, onRevoke, onView }) => {
     }
   };
 
+  // Format expiration date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+  };
+
   return (
     <Card className="p-6">
       <div className="flex flex-col space-y-4">
@@ -48,6 +55,7 @@ const CredentialCard = ({ credential, onShare, onRevoke, onView }) => {
           <div>
             <h3 className="text-lg font-medium text-gray-900">{credential.type}</h3>
             <p className="text-sm text-gray-500">Issued by {credential.issuer}</p>
+            <p className="text-sm text-gray-500">Expires on: {formatDate(credential.metadata?.expirationDate)}</p>
           </div>
           <CredentialStatus status={credential.status} />
         </div>

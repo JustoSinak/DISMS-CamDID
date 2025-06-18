@@ -9,6 +9,10 @@ import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import Loader from '../components/common/Loader';
 
+import BiometricCapture from '../components/identity/BiometricCapture';
+// Removed import of missing SecuritySetup component
+// import SecuritySetup from '../components/identity/SecuritySetup';
+
 const CreateIdentity = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -19,15 +23,16 @@ const CreateIdentity = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [didDocument, setDidDocument] = useState(null);
+  const [recoveryPhrase, setRecoveryPhrase] = useState('');
+  const [recoveryPhraseConfirmed, setRecoveryPhraseConfirmed] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
+    fullName: '',
     nationalIdNumber: '',
     dateOfBirth: '',
-    placeOfBirth: '',
     nationality: 'Cameroonian',
     gender: '',
-    fullName: '',
     email: '',
     phoneNumber: '',
     
@@ -43,6 +48,11 @@ const CreateIdentity = () => {
     // Step 4: Biometric Data (optional)
     biometricConsent: false,
     biometricData: null,
+
+    // Step 4: Security Setup
+    pin: '',
+    securityQuestion: '',
+    securityAnswer: '',
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -72,6 +82,13 @@ const CreateIdentity = () => {
         ...prev,
         [name]: ''
       }));
+    }
+  };
+
+  const handleRecoveryPhraseConfirm = (confirmed) => {
+    setRecoveryPhraseConfirmed(confirmed);
+    if (confirmed) {
+      setFormErrors(prev => ({ ...prev, recoveryPhraseConfirmed: '' }));
     }
   };
 
@@ -149,24 +166,33 @@ const CreateIdentity = () => {
   };
 
   const handleNextStep = async () => {
+    console.log('handleNextStep called, currentStep:', currentStep);
     if (validateStep(currentStep)) {
       if (currentStep === 2) {
         // Perform ID verification before proceeding
-        await verifyIdentity();
+        console.log('Calling verifyIdentity...');
+        try {
+          await verifyIdentity();
+          console.log('Returned from verifyIdentity');
+        } catch (err) {
+          console.error('Error in verifyIdentity:', err);
+          setError('Verification failed. Please try again.');
+          return; // prevent further step increment on error
+        }
+        return; // prevent step increment here, as verifyIdentity handles it
       } else {
         setCurrentStep(prev => prev + 1);
       }
+    } else {
+      console.log('Validation failed for step:', currentStep);
     }
-  };
-
-  const handlePrevStep = () => {
-    setCurrentStep(prev => prev - 1);
   };
 
   const verifyIdentity = async () => {
     setLoading(true);
     setError('');
     try {
+      console.log('verifyIdentity started with formData:', formData);
       // Call to backend verification service
       const verificationData = new FormData();
       verificationData.append('nationalIdNumber', formData.nationalIdNumber);
@@ -188,6 +214,7 @@ const CreateIdentity = () => {
       }
 
       const result = await response.json();
+      console.log('verifyIdentity result:', result);
       setVerificationStatus(result.status);
       
       if (result.status === 'verified') {
@@ -198,10 +225,16 @@ const CreateIdentity = () => {
         setError('Identity verification failed. Please ensure your documents are valid and clear.');
       }
     } catch (err) {
+      console.error('verifyIdentity error:', err);
       setError(err.message || 'Failed to verify identity');
+      throw err;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(prev => prev - 1);
   };
 
   const generateDID = async () => {
@@ -279,74 +312,32 @@ const CreateIdentity = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              label="Full Name"
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              error={formErrors.fullName}
-              placeholder="Enter your full name"
-              required
-            />
-            <Input
-              label="National ID Number"
-              type="text"
-              name="nationalIdNumber"
-              value={formData.nationalIdNumber}
-              onChange={handleChange}
-              error={formErrors.nationalIdNumber}
-              placeholder="Enter your ID number"
-              required
-            />
-            <Input
-              label="Date of Birth"
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleChange}
-              error={formErrors.dateOfBirth}
-              required
-            />
-            <Input
-              label="Email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={formErrors.email}
-              placeholder="Enter your email"
-              required
-            />
-            <Input
-              label="Phone Number"
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              error={formErrors.phoneNumber}
-              placeholder="e.g., 237612345678"
-              required
-            />
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Gender</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-md shadow-sm ${
-                  formErrors.gender ? 'border-red-300' : 'border-gray-300'
-                } focus:ring-emerald-500 focus:border-emerald-500`}
-                required
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-              {formErrors.gender && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.gender}</p>
-              )}
+              <h2 className="text-2xl font-semibold text-gray-900">Welcome to CamDID</h2>
+              <p className="mt-2 text-gray-700">
+                CamDID is a self-sovereign identity platform that empowers you to control your digital identity securely and privately.
+              </p>
+              <p className="mt-2 text-gray-700">
+                Benefits include enhanced security, privacy, and control over your personal data.
+              </p>
+              <p className="mt-2 text-gray-700">
+                Please read and accept the terms and conditions to proceed.
+              </p>
+              <div className="mt-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="termsAccepted"
+                    onChange={(e) => setFormData(prev => ({ ...prev, termsAccepted: e.target.checked }))}
+                    className="form-checkbox"
+                  />
+                  <span className="ml-2 text-gray-700">I accept the terms and conditions</span>
+                </label>
+                {formErrors.termsAccepted && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.termsAccepted}</p>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -508,6 +499,22 @@ const CreateIdentity = () => {
         );
 
       case 4:
+        return (
+          <BiometricCapture
+            biometricConsent={formData.biometricConsent}
+            setBiometricConsent={(consent) => setFormData(prev => ({ ...prev, biometricConsent: consent }))}
+            setBiometricData={(data) => setFormData(prev => ({ ...prev, biometricData: data }))}
+            error={formErrors.biometricData}
+          />
+        );
+
+      case 5:
+        return (
+          // Removed SecuritySetup component usage as it is missing
+          null
+        );
+
+      case 6:
         return (
           <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

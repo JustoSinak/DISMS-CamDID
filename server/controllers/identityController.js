@@ -4,6 +4,8 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const Web3 = require('web3');
 const { create } = require('ipfs-http-client');
+const identityService = require('../services/identityService');
+const { uploadToIPFS } = require('../utils/ipfs');
 
 // Initialize IPFS client
 const ipfs = create({ host: 'localhost', port: 5001, protocol: 'http' });
@@ -29,109 +31,170 @@ const hashIdentityData = (data) => {
 // Create Identity
 exports.createIdentity = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { 
-            personalInfo, 
-            attributes, 
-            walletAddress,
-            signedMessage 
-        } = req.body;
+        const { userId } = req.user; // From auth middleware
+        const { governmentId } = req.body;
 
-        // Validate required fields
-        if (!personalInfo || !walletAddress) {
-            return res.status(400).json({
-                success: false,
-                message: 'Personal information and wallet address are required'
-            });
-        }
+        // Upload government ID document to IPFS
+        const documentImage = await uploadToIPFS(governmentId.image);
 
-        // Check if user already has an identity
-        const existingIdentity = await Identity.findOne({ userId });
-        if (existingIdentity) {
-            return res.status(400).json({
-                success: false,
-                message: 'Identity already exists for this user'
-            });
-        }
-
-        // Prepare identity data for IPFS storage
-        const identityData = {
-            personalInfo: {
-                firstName: personalInfo.firstName,
-                lastName: personalInfo.lastName,
-                dateOfBirth: personalInfo.dateOfBirth,
-                nationality: personalInfo.nationality,
-                // Store encrypted sensitive data
-                encryptedPhone: personalInfo.phone ? encrypt(personalInfo.phone) : null,
-                encryptedEmail: personalInfo.email ? encrypt(personalInfo.email) : null,
-                encryptedAddress: personalInfo.address ? encrypt(JSON.stringify(personalInfo.address)) : null
-            },
-            attributes: attributes || [],
-            metadata: {
-                createdAt: new Date().toISOString(),
-                version: '1.0'
-            }
-        };
-
-        // Store identity data on IPFS
-        const ipfsResult = await ipfs.add(JSON.stringify(identityData));
-        const metadataURI = ipfsResult.path;
-
-        // Create identity hash
-        const identityHash = '0x' + hashIdentityData({
-            walletAddress,
-            personalInfo: personalInfo,
-            timestamp: Date.now()
-        });
-
-        // Prepare blockchain transaction data
-        const transactionData = {
-            identityHash,
-            metadataURI,
-            walletAddress
-        };
-
-        // Store identity in MongoDB
-        const newIdentity = new Identity({
-            userId,
-            walletAddress,
-            identityHash,
-            metadataURI,
-            personalInfo: {
-                firstName: personalInfo.firstName,
-                lastName: personalInfo.lastName,
-                dateOfBirth: personalInfo.dateOfBirth,
-                nationality: personalInfo.nationality
-            },
-            attributes: attributes || [],
-            blockchainStatus: 'pending',
-            isActive: true
-        });
-
-        await newIdentity.save();
-
-        // Update user record
-        await User.findByIdAndUpdate(userId, {
-            hasIdentity: true,
-            walletAddress: walletAddress
+        const identity = await identityService.createIdentity(userId, {
+            type: governmentId.type,
+            number: governmentId.number,
+            image: documentImage
         });
 
         res.status(201).json({
             success: true,
-            message: 'Identity created successfully',
             data: {
-                identityId: newIdentity._id,
-                identityHash,
-                metadataURI,
-                transactionData
+                identityId: identity._id,
+                did: identity.did,
+                status: identity.status
             }
         });
-
     } catch (error) {
-        console.error('Create identity error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to create identity',
+            error: error.message
+        });
+    }
+};
+
+exports.verifyGovernmentId = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+        const { verificationData } = req.body;
+
+        const result = await identityService.verifyGovernmentId(
+            identityId,
+            verificationData
+        );
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+exports.setupBiometrics = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+        const { biometricData } = req.body;
+
+        const identity = await identityService.setupBiometrics(
+            identityId,
+            biometricData
+        );
+
+        res.json({
+            success: true,
+            data: {
+                identityId: identity._id,
+                biometrics: {
+                    fingerprint: identity.biometrics.fingerprint.verified,
+                    facial: identity.biometrics.facial.verified,
+                    voice: identity.biometrics.voice.verified
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+exports.verifyContactInfo = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+        const { contactData } = req.body;
+
+        const identity = await identityService.verifyContactInfo(
+            identityId,
+            contactData
+        );
+
+        res.json({
+            success: true,
+            data: {
+                identityId: identity._id,
+                contactInfo: {
+                    phone: identity.contactInfo.phone.verified,
+                    email: identity.contactInfo.email.verified,
+                    address: identity.contactInfo.address.verified
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+exports.finalizeIdentity = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+
+        const identity = await identityService.finalizeIdentity(identityId);
+
+        res.json({
+            success: true,
+            data: {
+                identityId: identity._id,
+                did: identity.did,
+                status: identity.status,
+                verificationLevel: identity.verificationLevel,
+                merkleRoot: identity.merkleRoot
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+exports.getIdentity = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+
+        const identity = await identityService.getIdentity(identityId);
+
+        res.json({
+            success: true,
+            data: {
+                identityId: identity._id,
+                did: identity.did,
+                status: identity.status,
+                verificationLevel: identity.verificationLevel,
+                governmentId: {
+                    type: identity.governmentId.documentType,
+                    verificationStatus: identity.governmentId.verificationStatus
+                },
+                biometrics: {
+                    fingerprint: identity.biometrics.fingerprint.verified,
+                    facial: identity.biometrics.facial.verified,
+                    voice: identity.biometrics.voice.verified
+                },
+                contactInfo: {
+                    phone: identity.contactInfo.phone.verified,
+                    email: identity.contactInfo.email.verified,
+                    address: identity.contactInfo.address.verified
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
             error: error.message
         });
     }
@@ -193,52 +256,6 @@ exports.addAttribute = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to add attribute',
-            error: error.message
-        });
-    }
-};
-
-// Get Identity
-exports.getIdentity = async (req, res) => {
-    try {
-        const userId = req.user.id;
-
-        const identity = await Identity.findOne({ userId }).populate('userId', 'username email');
-        if (!identity) {
-            return res.status(404).json({
-                success: false,
-                message: 'Identity not found'
-            });
-        }
-
-        // Return public information only
-        const publicIdentity = {
-            id: identity._id,
-            walletAddress: identity.walletAddress,
-            identityHash: identity.identityHash,
-            personalInfo: identity.personalInfo,
-            attributes: identity.attributes.map(attr => ({
-                type: attr.type,
-                verified: attr.verified,
-                addedAt: attr.addedAt,
-                // Only include value if not private or if user is requesting their own identity
-                value: attr.isPrivate ? null : attr.value
-            })),
-            blockchainStatus: identity.blockchainStatus,
-            isActive: identity.isActive,
-            createdAt: identity.createdAt
-        };
-
-        res.status(200).json({
-            success: true,
-            data: publicIdentity
-        });
-
-    } catch (error) {
-        console.error('Get identity error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to retrieve identity',
             error: error.message
         });
     }

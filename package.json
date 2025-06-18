@@ -19,6 +19,8 @@
   "dependencies": {
     "@heroicons/react": "^1.0.6",
     "framer-motion": "^12.15.0",
-    "lucide-react": "^0.511.0"
+    "lucide-react": "^0.511.0",
+    "multer": "^2.0.1",
+    "qrcode": "^1.5.4"
   }
 }

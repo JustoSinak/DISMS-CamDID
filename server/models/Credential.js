@@ -1,154 +1,127 @@
 const mongoose = require('mongoose');
-const crypto = require('crypto');
+const Schema = mongoose.Schema;
 
-const CredentialSchema = new mongoose.Schema({
-  holder: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  issuer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+const CredentialSchema = new Schema({
+  identityId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Identity',
     required: true
   },
   type: {
     type: String,
-    required: true,
-    enum: ['identity', 'education', 'employment', 'professional', 'health', 'other']
+    enum: [
+      'government_id',
+      'passport',
+      'birth_certificate',
+      'diploma',
+      'certificate',
+      'driving_license',
+      'professional_certification',
+      'vaccination',
+      'medical_record',
+      'bank_statement',
+      'credit_report'
+    ],
+    required: true
+  },
+  category: {
+    type: String,
+    enum: [
+      'government',
+      'educational',
+      'professional',
+      'health',
+      'financial'
+    ],
+    required: true
   },
   status: {
     type: String,
-    required: true,
-    enum: ['active', 'revoked', 'expired'],
+    enum: ['active', 'expired', 'revoked'],
     default: 'active'
   },
+  issuer: {
+    name: String,
+    did: String,
+    signature: String
+  },
   metadata: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    required: true
+    title: String,
+    description: String,
+    issueDate: Date,
+    expirationDate: Date,
+    attributes: [{
+      name: String,
+      value: String,
+      isPrivate: {
+        type: Boolean,
+        default: true
+      }
+    }]
   },
-  credentialData: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed,
-    required: true
+  document: {
+    ipfsHash: String,
+    encryptionKey: String, // Encrypted document key
+    mimeType: String,
+    size: Number
   },
-  issuanceDate: {
+  blockchain: {
+    transactionHash: String,
+    blockNumber: Number,
+    merkleRoot: String,
+    merkleProof: [String]
+  },
+  sharing: {
+    accessControl: {
+      type: String,
+      enum: ['private', 'public', 'restricted'],
+      default: 'private'
+    },
+    allowedViewers: [{
+      did: String,
+      permissions: [String],
+      expiresAt: Date
+    }],
+    sharingHistory: [{
+      viewerDid: String,
+      timestamp: Date,
+      purpose: String,
+      attributes: [String]
+    }]
+  },
+  verification: {
+    lastVerified: Date,
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'verified', 'failed'],
+      default: 'pending'
+    },
+    verificationHistory: [{
+      timestamp: Date,
+      status: String,
+      verifier: String,
+      details: Schema.Types.Mixed
+    }]
+  },
+  createdAt: {
     type: Date,
-    default: Date.now,
-    required: true
+    default: Date.now
   },
-  expirationDate: {
-    type: Date
-  },
-  revocationDate: {
-    type: Date
-  },
-  revocationReason: {
-    type: String
-  },
-  proof: {
-    type: {
-      type: String,
-      required: true,
-      enum: ['JWT', 'Ed25519Signature2018']
-    },
-    created: {
-      type: Date,
-      required: true,
-      default: Date.now
-    },
-    verificationMethod: {
-      type: String,
-      required: true
-    },
-    signature: {
-      type: String,
-      required: true
-    }
-  },
-  verificationHistory: [{
-    verifier: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    verificationDate: {
-      type: Date,
-      default: Date.now
-    },
-    verificationResult: {
-      type: Boolean,
-      required: true
-    },
-    verificationPurpose: String
-  }]
-}, {
-  timestamps: true
-});
-
-// Add indexes for frequent queries
-CredentialSchema.index({ holder: 1, status: 1 });
-CredentialSchema.index({ issuer: 1, status: 1 });
-CredentialSchema.index({ type: 1 });
-CredentialSchema.index({ 'verificationHistory.verifier': 1 });
-
-// Virtual for checking if credential is expired
-CredentialSchema.virtual('isExpired').get(function() {
-  if (!this.expirationDate) return false;
-  return new Date() > this.expirationDate;
-});
-
-// Pre-save middleware to update status if expired
-CredentialSchema.pre('save', function(next) {
-  if (this.expirationDate && new Date() > this.expirationDate) {
-    this.status = 'expired';
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+});
+
+// Update the updatedAt timestamp before saving
+CredentialSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
   next();
 });
 
-// Instance method for cryptographic validation
-CredentialSchema.methods.validateSignature = async function(publicKey) {
-  try {
-    // Implementation would verify the issuerSignature using the issuer's public key
-    return true; // Placeholder
-  } catch (error) {
-    return false;
-  }
-};
-
-// Instance method for schema validation
-CredentialSchema.methods.validateSchema = async function() {
-  // Implementation would validate claims against schemaReference
-  return true; // Placeholder
-};
-
-// Instance method for revocation
-CredentialSchema.methods.revoke = async function(reason, revokedBy) {
-  this.status = 'revoked';
-  this.revocationReason = reason;
-  this.revocationDate = new Date();
-  // Implementation would update blockchain revocation registry
-  return this.save();
-};
-
-// Instance method for renewal
-CredentialSchema.methods.renew = async function(newExpirationDate) {
-  const oldExpirationDate = this.expirationDate;
-  
-  // Update credential
-  this.expirationDate = newExpirationDate;
-  this.issuanceDate = new Date();
-  
-  return this.save();
-};
-
-// Static method to find valid credentials by holder
-CredentialSchema.statics.findValidByHolder = function(holder) {
-  return this.find({
-    holder,
-    status: 'active',
-    expirationDate: { $gt: new Date() }
-  });
-};
+// Index for efficient querying
+CredentialSchema.index({ identityId: 1, type: 1 });
+CredentialSchema.index({ 'sharing.allowedViewers.did': 1 });
+CredentialSchema.index({ 'blockchain.transactionHash': 1 });
 
 module.exports = mongoose.model('Credential', CredentialSchema); 

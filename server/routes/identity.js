@@ -1,35 +1,28 @@
 // routes/identity.js
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const validation = require('../middleware/validation');
 const identityController = require('../controllers/identityController');
+const { authenticate } = require('../middleware/auth');
 
-// Identity routes
-router.post('/create', 
-    auth, 
-    validation.validateIdentityCreation, 
-    identityController.createIdentity
-);
+// All routes require authentication
+router.use(authenticate);
 
-router.post('/attributes', 
-    auth, 
-    validation.validateAttribute, 
-    identityController.addAttribute
-);
+// Create new identity
+router.post('/', identityController.createIdentity);
 
-router.get('/', 
-    auth, 
-    identityController.getIdentity
-);
+// Verify government ID
+router.post('/:identityId/verify-government-id', identityController.verifyGovernmentId);
 
-router.put('/blockchain-status', 
-    auth, 
-    identityController.updateBlockchainStatus
-);
+// Setup biometrics
+router.post('/:identityId/setup-biometrics', identityController.setupBiometrics);
 
-router.get('/verify/:walletAddress', 
-    identityController.verifyOnBlockchain
-);
+// Verify contact information
+router.post('/:identityId/verify-contact', identityController.verifyContactInfo);
+
+// Finalize identity
+router.post('/:identityId/finalize', identityController.finalizeIdentity);
+
+// Get identity details
+router.get('/:identityId', identityController.getIdentity);
 
 module.exports = router;

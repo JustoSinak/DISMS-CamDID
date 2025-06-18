@@ -71,7 +71,11 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       label: 'Credentials',
       icon: CreditCard,
       badge: identityStatus.pending > 0 ? identityStatus.pending : null,
-      path: '/citizen/credentials'
+      path: '/citizen/credentials',
+      subItems: [
+        { label: 'All Credentials', path: '/citizen/credentials' },
+        { label: 'Add New', path: '/citizen/credentials/create' }
+      ]
     },
     { id: 'documents', label: 'Documents', icon: FileText, path: '/citizen/documents' },
     { id: 'share', label: 'Share Identity', icon: Share2, path: '/citizen/share' },
@@ -96,42 +100,72 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   ];
 
   const MenuItem = ({ item }) => {
-    const isActive = location.pathname === item.path;
+    const isActive = location.pathname === item.path || 
+      (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path));
+    const [showSubItems, setShowSubItems] = useState(false);
 
     return (
-      <NavLink
-        to={item.path}
-        className={({ isActive }) =>
-          `group relative flex items-center px-3 py-3 mb-1 rounded-xl transition-all duration-200 cursor-pointer
-          ${isActive ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
-          ${isCollapsed ? 'justify-center' : 'justify-between'}`
-        }
-      >
-        <div className="flex items-center min-w-0">
-          <item.icon size={20} className="flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3 font-medium text-sm truncate">{item.label}</span>}
-        </div>
+      <div>
+        <NavLink
+          to={item.path}
+          className={({ isActive }) =>
+            `group relative flex items-center px-3 py-3 mb-1 rounded-xl transition-all duration-200 cursor-pointer
+            ${isActive ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
+            ${isCollapsed ? 'justify-center' : 'justify-between'}`
+          }
+          onClick={() => item.subItems && setShowSubItems(!showSubItems)}
+        >
+          <div className="flex items-center min-w-0">
+            <item.icon size={20} className="flex-shrink-0" />
+            {!isCollapsed && <span className="ml-3 font-medium text-sm truncate">{item.label}</span>}
+          </div>
 
-        {!isCollapsed && item.badge && (
-          <div className="ml-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
-            {item.badge}
+          {!isCollapsed && item.badge && (
+            <div className="ml-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
+              {item.badge}
+            </div>
+          )}
+
+          {isCollapsed && item.badge && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+              {item.badge}
+            </div>
+          )}
+
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
+              <div className="font-medium">{item.label}</div>
+              {item.subItems && (
+                <div className="mt-1 space-y-1">
+                  {item.subItems.map(subItem => (
+                    <div key={subItem.path} className="text-xs text-gray-300">
+                      {subItem.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="absolute top-3 -left-1 w-2 h-2 bg-gray-900 transform rotate-45" />
+            </div>
+          )}
+        </NavLink>
+
+        {!isCollapsed && item.subItems && showSubItems && (
+          <div className="ml-8 space-y-1">
+            {item.subItems.map(subItem => (
+              <NavLink
+                key={subItem.path}
+                to={subItem.path}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors
+                  ${isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`
+                }
+              >
+                {subItem.label}
+              </NavLink>
+            ))}
           </div>
         )}
-
-        {isCollapsed && item.badge && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-            {item.badge}
-          </div>
-        )}
-
-        {isCollapsed && (
-          <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50">
-            <div className="font-medium">{item.label}</div>
-            <div className="text-xs text-gray-300">{item.description || ''}</div>
-            <div className="absolute top-3 -left-1 w-2 h-2 bg-gray-900 transform rotate-45" />
-          </div>
-        )}
-      </NavLink>
+      </div>
     );
   };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../common/Button';
-import { Alert } from '../common/Alert';
-import { Fingerprint, FaceId, Check, X } from 'lucide-react';
+import Button from '../common/Button';
+import Alert from '../common/Alert';
+import { Fingerprint, User, Check, X } from 'lucide-react';
 import { useIdentity } from '../../contexts/IdentityContext';
 
 const BiometricCapture = ({ formData, onChange, onNext, onBack, currentStep, totalSteps }) => {
@@ -139,7 +139,8 @@ const BiometricCapture = ({ formData, onChange, onNext, onBack, currentStep, tot
                 </div>
 
                 <div>
-                  <FaceId className="w-6 h-6 text-gray-400" />
+                  {/* Replaced FaceId icon with User icon */}
+                  <User className="w-6 h-6 text-gray-400" />
                   <Button
                     onClick={handleFaceCapture}
                     loading={loading}

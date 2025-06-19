@@ -12,8 +12,9 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.17",
     "axios": "^1.9.0",
+    "bip39": "^3.1.0",
     "crypto-js": "^4.2.0",
-    "ethers": "^6.10.0",
+    "ethers": "^6.14.4",
     "framer-motion": "^12.12.1",
     "html5-qrcode": "^2.3.8",
     "ipfs-http-client": "^60.0.1",
@@ -31,6 +32,7 @@
     "redux": "^5.0.1",
     "sass": "^1.89.0",
     "tailwindcss": "^3.4.1",
+    "tesseract.js": "^4.1.4",
     "web-vitals": "^2.1.4",
     "web3": "^4.16.0",
     "workbox-webpack-plugin": "^7.3.0"

@@ -35,7 +35,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     setIsEditingProfile(false);
   };
 
-  const web3Status = { connected: true, network: 'Ethereum Mainnet', balance: '0.245 ETH' };
+  const web3Status = { connected: true, network: 'Ethereum Mainnet', balance: '1' };
   const identityStatus = { created: true, verified: 2, pending: 1 };
 
   useEffect(() => {

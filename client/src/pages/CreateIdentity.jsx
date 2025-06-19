@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
-import { Camera, Upload, X, Check, AlertCircle, Loader as LoaderIcon, Shield, Key, Lock } from 'lucide-react';
+import { Camera, Upload, X, Check, AlertCircle, Loader as LoaderIcon, Shield, Lock } from 'lucide-react';
 import DashboardNavbar from '../components/dashboard/DashboardNavbar';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import Loader from '../components/common/Loader';
 import BiometricCapture from '../components/identity/BiometricCapture';
-import { ethers } from 'ethers';
+import { ethers, HDNodeWallet } from 'ethers';
 import { create } from 'ipfs-http-client';
 import Tesseract from 'tesseract.js';
+import MainLayout from '../layouts/MainLayout'; // Import MainLayout
 
 // Initialize IPFS client
 const ipfs = create({ url: process.env.REACT_APP_IPFS_URL });
@@ -43,24 +43,16 @@ const CreateIdentity = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
-  const [verificationStatus, setVerificationStatus] = useState(null);
   const [didDocument, setDidDocument] = useState(null);
   const [recoveryPhrase, setRecoveryPhrase] = useState('');
   const [recoveryPhraseConfirmed, setRecoveryPhraseConfirmed] = useState(false);
-  const [ocrProcessing, setOcrProcessing] = useState(false);
-  const [ocrResult, setOcrResult] = useState(null);
   const [idVerificationStatus, setIdVerificationStatus] = useState('pending'); // pending, verified, rejected
   const [biometricSetup, setBiometricSetup] = useState({
     fingerprint: null,
     facial: null,
     voice: null
   });
-  const [contactVerification, setContactVerification] = useState({
-    email: { verified: false, code: '' },
-    phone: { verified: false, code: '' }
-  });
   const [hdWallet, setHdWallet] = useState(null);
-  const [ipfsHash, setIpfsHash] = useState(null);
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
@@ -71,17 +63,16 @@ const CreateIdentity = () => {
     gender: '',
     email: '',
     phoneNumber: '',
-    
-    // Step 2: Document Upload
+    termsAccepted: false, // Added terms acceptance
+
+    // Step 2: Document Upload & Address
     idCardImage: null,
     selfieImage: null,
-    
-    // Step 3: Address Information
     address: '',
     city: '',
     region: '',
-    
-    // Step 4: Biometric Data (optional)
+
+    // Step 3: Biometric Data (optional)
     biometricConsent: false,
     biometricData: null,
 
@@ -129,19 +120,17 @@ const CreateIdentity = () => {
   };
 
   const processDocumentWithOCR = async (file) => {
-    setOcrProcessing(true);
     try {
       const result = await Tesseract.recognize(file, 'eng');
-      setOcrResult(result.data.text);
-      
+
       // Extract relevant information using regex patterns
       const extractedData = {
-        name: extractName(result.data.text),
-        idNumber: extractIdNumber(result.data.text),
-        dob: extractDOB(result.data.text),
+        fullName: extractName(result.data.text), // Assuming OCR can extract full name
+        nationalIdNumber: extractIdNumber(result.data.text),
+        dateOfBirth: extractDOB(result.data.text),
         // Add more extraction patterns as needed
       };
-      
+
       // Update form data with extracted information
       setFormData(prev => ({
         ...prev,
@@ -150,7 +139,7 @@ const CreateIdentity = () => {
     } catch (error) {
       setError('Failed to process document with OCR');
     } finally {
-      setOcrProcessing(false);
+      // setOcrProcessing(false); // ocrProcessing state removed
     }
   };
 
@@ -187,7 +176,17 @@ const CreateIdentity = () => {
     const errors = {};
 
     switch (step) {
-      case 1:
+      case 1: // Welcome and Education
+        if (!formData.termsAccepted) errors.termsAccepted = 'You must accept the terms and conditions';
+        break;
+
+      case 2: // Document Upload and Address Information
+        if (!formData.idCardImage) errors.idCardImage = 'ID card image is required';
+        if (!formData.selfieImage) errors.selfieImage = 'Selfie image is required';
+        if (!formData.address) errors.address = 'Address is required';
+        if (!formData.city) errors.city = 'City is required';
+        if (!formData.region) errors.region = 'Region is required';
+        // Basic Info validation (moved from old step 1)
         if (!formData.fullName) errors.fullName = 'Full name is required';
         if (!formData.nationalIdNumber) {
           errors.nationalIdNumber = 'National ID number is required';
@@ -212,15 +211,20 @@ const CreateIdentity = () => {
         }
         break;
 
-      case 2:
-        if (!formData.idCardImage) errors.idCardImage = 'ID card image is required';
-        if (!formData.selfieImage) errors.selfieImage = 'Selfie image is required';
+      case 3: // Biometric Capture
+        // Biometric validation logic here (e.g., check if biometric data is captured)
+        // if (!formData.biometricData) errors.biometricData = 'Biometric data is required';
         break;
 
-      case 3:
-        if (!formData.address) errors.address = 'Address is required';
-        if (!formData.city) errors.city = 'City is required';
-        if (!formData.region) errors.region = 'Region is required';
+      case 4: // Security Setup
+        if (!recoveryPhraseConfirmed) errors.recoveryPhraseConfirmed = 'You must confirm your recovery phrase';
+        if (!formData.pin) errors.pin = 'PIN is required';
+        if (!formData.securityQuestion) errors.securityQuestion = 'Security question is required';
+        if (!formData.securityAnswer) errors.securityAnswer = 'Security answer is required';
+        break;
+
+      case 5: // Identity Creation Confirmation
+        // No specific validation needed for the confirmation step
         break;
 
       default:
@@ -234,20 +238,44 @@ const CreateIdentity = () => {
   const handleNextStep = async () => {
     console.log('handleNextStep called, currentStep:', currentStep);
     if (validateStep(currentStep)) {
-      if (currentStep === 2) {
-        // Perform ID verification before proceeding
-        console.log('Calling verifyIdentity...');
-        try {
-          await verifyIdentity();
-          console.log('Returned from verifyIdentity');
-        } catch (err) {
-          console.error('Error in verifyIdentity:', err);
-          setError('Verification failed. Please try again.');
-          return; // prevent further step increment on error
+      setLoading(true);
+      setError('');
+      try {
+        switch (currentStep) {
+          case 1:
+            // Move to Step 2 (Document Upload & Address)
+            setCurrentStep(prev => prev + 1);
+            break;
+          case 2:
+            // Perform ID verification, generate DID, and move to Step 3
+            console.log('Calling verifyIdentity...');
+            await verifyIdentity(); // verifyIdentity now handles DID generation and step increment on success
+            console.log('Returned from verifyIdentity');
+            break;
+          case 3:
+            // Setup Biometric Authentication and move to Step 4
+            console.log('Calling setupBiometricAuthentication...');
+            await setupBiometricAuthentication();
+            setCurrentStep(prev => prev + 1);
+            console.log('Returned from setupBiometricAuthentication');
+            break;
+          case 4:
+            // Move to Step 5 (Confirmation)
+            setCurrentStep(prev => prev + 1);
+            break;
+          case 5:
+            // This case should ideally not be reached by the "Next" button,
+            // as the final step should have a "Submit" button.
+            // The handleSubmit function will be called from the form onSubmit.
+            break;
+          default:
+            break;
         }
-        return; // prevent step increment here, as verifyIdentity handles it
-      } else {
-        setCurrentStep(prev => prev + 1);
+      } catch (err) {
+        console.error('Error in handleNextStep:', err);
+        setError(err.message || 'An error occurred during the step transition.');
+      } finally {
+        setLoading(false);
       }
     } else {
       console.log('Validation failed for step:', currentStep);
@@ -281,16 +309,16 @@ const CreateIdentity = () => {
 
       const result = await response.json();
       console.log('verifyIdentity result:', result);
-      setVerificationStatus(result.status);
+      // setVerificationStatus(result.status); // verificationStatus state removed
 
       // Simulate ID verification status
       const isVerified = Math.random() < 0.8; // 80% chance of verification
       setIdVerificationStatus(isVerified ? 'verified' : 'rejected');
-      
+
       if (isVerified) {
         // Generate DID if verification successful
-        await generateDID();
-        setCurrentStep(prev => prev + 1);
+        await createDID(); // Use createDID which includes HD wallet generation and blockchain registration
+        setCurrentStep(prev => prev + 1); // Move to the next step (Biometric Capture)
       } else {
         setError('Identity verification failed. Please ensure your documents are valid and clear.');
       }
@@ -307,34 +335,12 @@ const CreateIdentity = () => {
     setCurrentStep(prev => prev - 1);
   };
 
-  const generateDID = async () => {
-    try {
-      const response = await fetch('/api/identity/generate-did', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
-        body: JSON.stringify({
-          walletAddress: account,
-          nationalIdNumber: formData.nationalIdNumber
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate DID');
-      }
-
-      const result = await response.json();
-      setDidDocument(result.didDocument);
-    } catch (err) {
-      setError(err.message || 'Failed to generate DID');
-      throw err;
-    }
-  };
+  // generateDID function is now integrated into createDID and verifyIdentity
+  // const generateDID = async () => { ... }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validation for the final step (Step 5) is done in validateStep(5)
     if (!validateStep(currentStep)) return;
 
     if (!web3 || !account) {
@@ -357,7 +363,8 @@ const CreateIdentity = () => {
         body: JSON.stringify({
           did: didDocument.id,
           walletAddress: account,
-          ...formData
+          ...formData,
+          hdWallet: hdWallet // Include generated wallet details
         })
       });
 
@@ -365,7 +372,7 @@ const CreateIdentity = () => {
         throw new Error('Failed to create digital identity');
       }
 
-      const data = await response.json();
+      await response.json(); // Data is not used, so we just await the response
 
       setSuccess('Digital identity created successfully! Your credential has been issued to your wallet. Redirecting to dashboard...');
       setTimeout(() => {
@@ -416,54 +423,36 @@ const CreateIdentity = () => {
         // Process audio data for voice pattern
         setBiometricSetup(prev => ({ ...prev, voice: 'voice_pattern_data' }));
       }
+      // Store biometric data in formData
+      setFormData(prev => ({ ...prev, biometricData: biometricSetup }));
+
     } catch (error) {
       setError('Failed to setup biometric authentication');
-    }
-  };
-
-  const verifyContact = async (type) => {
-    try {
-      const response = await fetch(`/api/verify/${type}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
-        body: JSON.stringify({
-          [type]: formData[type]
-        })
-      });
-
-      if (!response.ok) throw new Error(`Failed to send ${type} verification code`);
-
-      const { code } = await response.json();
-      setContactVerification(prev => ({
-        ...prev,
-        [type]: { ...prev[type], code }
-      }));
-    } catch (error) {
-      setError(`Failed to verify ${type}`);
+      throw error; // Re-throw to be caught by handleNextStep
     }
   };
 
   const generateHDWallet = async () => {
     try {
       const wallet = ethers.Wallet.createRandom();
-      const hdNode = ethers.utils.HDNode.fromSeed(wallet.privateKey);
-      
+      const hdNode = HDNodeWallet.fromSeed(wallet.privateKey);
+
       // Derive keys according to the specified path
       const identityKey = hdNode.derivePath("m/44'/60'/0'/0/0");
       const documentKey = hdNode.derivePath("m/44'/60'/0'/1/0");
       const sharingKey = hdNode.derivePath("m/44'/60'/0'/2/0");
 
-      setHdWallet({
+      const walletDetails = {
         masterSeed: wallet.mnemonic.phrase,
         identityKey: identityKey.privateKey,
         documentKey: documentKey.privateKey,
         sharingKey: sharingKey.privateKey
-      });
+      };
 
-      return wallet;
+      setHdWallet(walletDetails);
+      setRecoveryPhrase(wallet.mnemonic.phrase); // Set recovery phrase state
+
+      return { wallet, walletDetails };
     } catch (error) {
       setError('Failed to generate HD wallet');
       throw error;
@@ -472,8 +461,8 @@ const CreateIdentity = () => {
 
   const createDID = async () => {
     try {
-      const wallet = await generateHDWallet();
-      
+      const { wallet, walletDetails } = await generateHDWallet();
+
       // Create DID document
       const didDocument = {
         '@context': ['https://www.w3.org/ns/did/v1'],
@@ -491,13 +480,12 @@ const CreateIdentity = () => {
           id: `${wallet.address}#keys-2`,
           type: 'X25519KeyAgreementKey2019',
           controller: wallet.address,
-          publicKeyHex: hdWallet.documentKey
+          publicKeyHex: walletDetails.documentKey // Use derived document key
         }]
       };
 
       // Store DID document on IPFS
       const { cid } = await ipfs.add(JSON.stringify(didDocument));
-      setIpfsHash(cid.toString());
 
       // Store DID on blockchain
       const response = await fetch('/api/identity/register-did', {
@@ -535,7 +523,7 @@ const CreateIdentity = () => {
                 <p className="text-gray-600">Create your secure digital identity</p>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-4">What you'll need:</h3>
               <ul className="space-y-3">
@@ -572,7 +560,7 @@ const CreateIdentity = () => {
           </div>
         );
 
-      case 2:
+      case 2: // Document Upload and Address Information
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -728,164 +716,191 @@ const CreateIdentity = () => {
                 <p className="mt-1 text-sm text-red-600">{formErrors.selfieImage}</p>
               )}
             </div>
-          </div>
-        );
 
-      case 3:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              label="Address"
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              error={formErrors.address}
-              placeholder="Enter your address"
-              required
-            />
-            <Input
-              label="City"
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              error={formErrors.city}
-              placeholder="Enter your city"
-              required
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Region</label>
-              <select
-                name="region"
-                value={formData.region}
+            {/* Address Information - Moved from Step 3 */}
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              <Input
+                label="Address"
+                type="text"
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
-                className={`mt-1 block w-full rounded-md shadow-sm ${
-                  formErrors.region ? 'border-red-300' : 'border-gray-300'
-                } focus:ring-emerald-500 focus:border-emerald-500`}
+                error={formErrors.address}
+                placeholder="Enter your address"
                 required
-              >
-                <option value="">Select region</option>
-                <option value="Adamawa">Adamawa</option>
-                <option value="Centre">Centre</option>
-                <option value="East">East</option>
-                <option value="Far North">Far North</option>
-                <option value="Littoral">Littoral</option>
-                <option value="North">North</option>
-                <option value="Northwest">Northwest</option>
-                <option value="South">South</option>
-                <option value="Southwest">Southwest</option>
-                <option value="West">West</option>
-              </select>
-              {formErrors.region && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.region}</p>
-              )}
+              />
+              <Input
+                label="City"
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                error={formErrors.city}
+                placeholder="Enter your city"
+                required
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Region</label>
+                <select
+                  name="region"
+                  value={formData.region}
+                  onChange={handleChange}
+                  className={`mt-1 block w-full rounded-md shadow-sm ${
+                    formErrors.region ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-emerald-500 focus:border-emerald-500`}
+                  required
+                >
+                  <option value="">Select region</option>
+                  <option value="Adamawa">Adamawa</option>
+                  <option value="Centre">Centre</option>
+                  <option value="East">East</option>
+                  <option value="Far North">Far North</option>
+                  <option value="Littoral">Littoral</option>
+                  <option value="North">North</option>
+                  <option value="Northwest">Northwest</option>
+                  <option value="South">South</option>
+                  <option value="Southwest">Southwest</option>
+                  <option value="West">West</option>
+                </select>
+                {formErrors.region && (
+                  <p className="mt-1 text-sm text-red-600">{formErrors.region}</p>
+                )}
+              </div>
             </div>
           </div>
         );
 
-      case 4:
+      case 3: // Biometric Capture
         return (
           <div className="space-y-6">
             <div className="flex items-center space-x-4 mb-6">
-              <Key className="w-8 h-8 text-emerald-500" />
+              <Camera className="w-8 h-8 text-emerald-500" />
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Biometric Setup</h3>
-                <p className="text-gray-600">Setup your biometric authentication</p>
+                <h2 className="text-2xl font-semibold text-gray-900">Biometric Capture</h2>
+                <p className="text-gray-600">Setup your biometric authentication methods.</p>
               </div>
             </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-700">
-                Click the button below to simulate biometric capture.
-              </p>
-              <Button
-                type="button"
-                className="mt-2"
-                onClick={() => {
-                  // Generate random biometric data for simulation purposes
-                  const randomData = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                  setFormData(prev => ({ ...prev, biometricData: randomData }));
-                }}
-              >
-                Simulate Biometric Capture
-              </Button>
-              {formData.biometricData && (
-                <p className="mt-2 text-sm text-gray-600">Biometric Data: {formData.biometricData}</p>
-              )}
-            </div>
+            {/* Biometric Capture Component/UI goes here */}
+            <BiometricCapture onCapture={setBiometricSetup} />
+             {formErrors.biometricData && (
+              <p className="mt-1 text-sm text-red-600">{formErrors.biometricData}</p>
+            )}
           </div>
         );
 
-      case 5:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4 mb-6">
-              <Key className="w-8 h-8 text-emerald-500" />
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Security Setup</h3>
-                <p className="text-gray-600">Generate your recovery phrase and security keys</p>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-700">
-                Please write down your 12-word recovery phrase and keep it in a safe place. This phrase is the only way to recover your identity if you lose access to your device.
-              </p>
-              <div className="mt-2 p-2 bg-gray-100 rounded font-mono text-gray-800">
-                {hdWallet?.masterSeed || '************'}
-              </div>
-              <Button
-                type="button"
-                className="mt-2"
-                onClick={generateHDWallet}
-              >
-                Generate Recovery Phrase
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Identity Key</h4>
-                <p className="text-sm text-gray-600 break-all font-mono">
-                  {hdWallet?.identityKey ? `${hdWallet.identityKey.slice(0, 10)}...` : 'Not generated'}
-                </p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Document Key</h4>
-                <p className="text-sm text-gray-600 break-all font-mono">
-                  {hdWallet?.documentKey ? `${hdWallet.documentKey.slice(0, 10)}...` : 'Not generated'}
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
+      case 4: // Security Setup
         return (
           <div className="space-y-6">
             <div className="flex items-center space-x-4 mb-6">
               <Lock className="w-8 h-8 text-emerald-500" />
               <div>
-                <h3 className="text-lg font-medium text-gray-900">DID Creation</h3>
-                <p className="text-gray-600">Your decentralized identifier is being created</p>
+                <h2 className="text-2xl font-semibold text-gray-900">Security Setup</h2>
+                <p className="text-gray-600">Set up your recovery phrase and PIN.</p>
               </div>
             </div>
 
-            {didDocument && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">Your Decentralized Identifier (DID)</h4>
-                <p className="text-sm text-gray-600 break-all font-mono">{didDocument.id}</p>
-                <p className="mt-2 text-sm text-gray-500">IPFS Hash: {ipfsHash}</p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    Write down your recovery phrase and keep it in a safe place. This is the only way to recover your identity if you lose access to your device.
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <h4 className="font-medium text-emerald-900 mb-2">Final Confirmation</h4>
-              <p className="text-sm text-emerald-700">
-                Your digital identity is ready to be created. Click the button below to generate your
-                Verifiable Credential and store it in your wallet.
-              </p>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700">Recovery Phrase</label>
+              <div className="mt-1 p-4 bg-gray-100 rounded-md font-mono text-sm text-gray-800 break-words">
+                {recoveryPhrase || 'Generating...'}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="recoveryPhraseConfirmed"
+                  checked={recoveryPhraseConfirmed}
+                  onChange={e => handleRecoveryPhraseConfirm(e.target.checked)}
+                  className="form-checkbox h-5 w-5 text-emerald-600"
+                />
+                <span className="ml-2 text-gray-700">I have written down my recovery phrase</span>
+              </label>
+              {formErrors.recoveryPhraseConfirmed && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.recoveryPhraseConfirmed}</p>
+              )}
+            </div>
+
+            <Input
+              label="Create PIN"
+              type="password"
+              name="pin"
+              value={formData.pin}
+              onChange={handleChange}
+              error={formErrors.pin}
+              placeholder="Enter a 6-digit PIN"
+              maxLength="6"
+              required
+            />
+
+             <Input
+              label="Security Question"
+              type="text"
+              name="securityQuestion"
+              value={formData.securityQuestion}
+              onChange={handleChange}
+              error={formErrors.securityQuestion}
+              placeholder="e.g., What is your mother's maiden name?"
+              required
+            />
+
+            <Input
+              label="Security Answer"
+              type="text"
+              name="securityAnswer"
+              value={formData.securityAnswer}
+              onChange={handleChange}
+              error={formErrors.securityAnswer}
+              placeholder="Enter your answer"
+              required
+            />
+          </div>
+        );
+
+      case 5: // Identity Creation Confirmation
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4 mb-6">
+              <Check className="w-8 h-8 text-emerald-500" />
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">Identity Created!</h2>
+                <p className="text-gray-600">Your digital identity has been successfully created.</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Summary:</h3>
+              {didDocument && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Your Decentralized Identifier (DID):</p>
+                  <p className="mt-1 font-mono text-sm text-gray-800 break-all">{didDocument.id}</p>
+                </div>
+              )}
+              {hdWallet && (
+                 <div>
+                  <p className="text-sm font-medium text-gray-700">Your Recovery Phrase:</p>
+                  <p className="mt-1 font-mono text-sm text-gray-800 break-all">{hdWallet.masterSeed}</p>
+                </div>
+              )}
+              {/* Add other summary details as needed */}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">You can now proceed to your dashboard to manage your identity and credentials.</p>
             </div>
           </div>
         );
@@ -895,135 +910,97 @@ const CreateIdentity = () => {
     }
   };
 
+  const renderStepIndicator = () => {
+    const steps = [
+      'Welcome',
+      'Verification',
+      'Biometrics',
+      'Security',
+      'Confirmation'
+    ];
+
+    return (
+      <nav className="flex items-center justify-center" aria-label="Progress">
+        <ol className="flex items-center space-x-5">
+          {steps.map((step, index) => (
+            <li key={step}>
+              {currentStep > index + 1 ? (
+                <button className="block h-2.5 w-2.5 rounded-full bg-emerald-600 hover:bg-emerald-900">
+                  <span className="sr-only">{step}</span>
+                </button>
+              ) : currentStep === index + 1 ? (
+                <button className="relative flex items-center justify-center" aria-current="step">
+                  <span className="absolute flex h-5 w-5 p-px" aria-hidden="true">
+                    <span className="h-full w-full rounded-full bg-emerald-200" />
+                  </span>
+                  <span className="relative block h-2.5 w-2.5 rounded-full bg-emerald-600" aria-hidden="true" />
+                  <span className="sr-only">{step}</span>
+                </button>
+              ) : (
+                <button className="block h-2.5 w-2.5 rounded-full bg-gray-200 hover:bg-gray-400">
+                  <span className="sr-only">{step}</span>
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+    );
+  };
+
   return (
-    <>
+    <MainLayout> {/* Assuming MainLayout provides the basic page structure */}
       <DashboardNavbar />
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="max-w-4xl mx-auto p-6 md:p-8 bg-white rounded-lg shadow-lg">
-          <div className="mb-8">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900">Create Your Digital Identity</h1>
-              <p className="mt-2 text-gray-600">
-                Follow the steps below to create your secure digital identity
-              </p>
-            </div>
-
-            {/* Progress Steps */}
-            <div className="mt-8">
-              <div className="flex justify-between items-center">
-                {['Personal Info', 'Document Upload', 'Address', 'Confirmation'].map((step, index) => (
-                  <div
-                    key={step}
-                    className={`flex flex-col items-center ${
-                      index < currentStep
-                        ? 'text-emerald-600'
-                        : index === currentStep - 1
-                        ? 'text-blue-600'
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        index < currentStep
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : index === currentStep - 1
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'bg-gray-100'
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <span className="mt-2 text-sm font-medium">{step}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="relative mt-2">
-                <div className="absolute left-0 top-4 h-0.5 w-full bg-gray-200">
-                  <div
-                    className="absolute h-full bg-emerald-500 transition-all duration-300"
-                    style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
-                  ></div>
+      <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <Card>
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                  {error}
                 </div>
+              )}
+               {success && (
+                <div className="mb-4 p-3 bg-emerald-100 border border-emerald-400 text-emerald-700 rounded">
+                  {success}
+                </div>
+              )}
+
+              {renderStepIndicator()}
+
+              <div className="mt-8">
+                {renderStepContent()}
               </div>
-            </div>
-          </div>
 
-          {(error || web3Error) && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              {error || web3Error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md flex items-center">
-              <Check className="w-5 h-5 mr-2" />
-              {success}
-            </div>
-          )}
-
-          {web3Loading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader />
-              <span className="ml-2 text-gray-600">Connecting to Web3...</span>
-            </div>
-          ) : (
-            <form onSubmit={currentStep === 4 ? handleSubmit : (e) => e.preventDefault()}>
-              {renderStepContent()}
-
-              <div className="flex justify-between mt-8">
-                {currentStep > 1 && (
-                  <Button
-                    type="button"
-                    onClick={handlePrevStep}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
+              <div className="mt-8 flex justify-between">
+                {currentStep > 1 && currentStep < 5 && (
+                  <Button onClick={handlePrevStep} variant="secondary">
                     Previous
                   </Button>
                 )}
-                <div className="ml-auto">
-                  {currentStep < 4 ? (
-                    <Button
-                      type="button"
-                      onClick={handleNextStep}
-                      disabled={loading}
-                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? (
-                        <>
-                          <LoaderIcon className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                          Verifying...
-                        </>
-                      ) : (
-                        'Next'
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? (
-                        <>
-                          <LoaderIcon className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                          Creating Identity...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="-ml-1 mr-3 h-5 w-5" />
-                          Create Digital Identity
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                 {currentStep === 1 && (
+                   <div>{/* Placeholder to keep spacing consistent */}</div>
+                 )}
+
+                {currentStep < 5 && (
+                  <Button onClick={handleNextStep} disabled={loading || web3Loading}>
+                    {loading ? <LoaderIcon className="animate-spin mr-2" size={20} /> : null}
+                    {currentStep === 1 ? 'Get Started' : 'Next'}
+                  </Button>
+                )}
+
+                {currentStep === 5 && (
+                  <Button onClick={handleSubmit} disabled={loading || web3Loading}>
+                     {loading ? <LoaderIcon className="animate-spin mr-2" size={20} /> : null}
+                    Create Identity
+                  </Button>
+                )}
               </div>
-            </form>
-          )}
-        </Card>
+            </div>
+          </Card>
+        </div>
       </div>
-    </>
+    </MainLayout>
   );
 };
 

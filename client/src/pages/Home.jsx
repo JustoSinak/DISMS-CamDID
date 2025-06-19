@@ -446,7 +446,7 @@ const Home = () => {
 
             {/* Legal */}
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-orange-accent">Legal</h3>
+              <h3 className="text-lg font-semibold mb-4 text-red-700">Legal</h3>
               <ul className="space-y-2">
                 <li>
                   <Link to="/privacy" className="text-gray-300 hover:text-orange-accent transition-colors">Privacy Policy</Link>

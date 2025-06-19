@@ -1,10 +1,10 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Navbar } from '../components/common/Navbar';
-import { Sidebar } from '../components/common/Sidebar';
-import { Button } from '../components/common/Button';
-import { User, Plus, Share2, LogOut } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import Sidebar from '../components/Sidebar';
+import Button from '../components/common/Button';
+import { User, LogOut } from 'lucide-react';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();

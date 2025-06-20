@@ -1,26 +1,3 @@
-<<<<<<< HEAD
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  User,
-  Shield,
-  CreditCard,
-  Share2,
-  Settings,
-  Activity,
-  PanelLeft,
-  X,
-  CheckCircle,
-  ChevronLeft,
-  Menu,
-  FileText
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useWallet } from '../../contexts/WalletContext';
-import { cn } from '../../utils/formatters';
-import Button from '../common/Button';
-import { useIsMobile } from '../../hooks/useAuth'; // fallback to useAuth hook or remove if not applicable
-=======
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -28,17 +5,24 @@ import {
   Lock, Database, Users, Activity, LogOut, ChevronLeft, ChevronRight,
   Wallet, Eye, CheckCircle, Menu, X
 } from 'lucide-react';
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
+import { useAuth } from '../../contexts/AuthContext';
+/* Removed import of useWallet since WalletContext does not exist */
+// import { useWallet } from '../../contexts/WalletContext';
+import { cn } from '../../utils/formatters';
+import Button from '../common/Button';
+import { useIsMobile } from '../../hooks/useAuth'; // fallback to useAuth hook or remove if not applicable
 
 const DashboardSidebar = ({ onCollapseChange }) => {
-  const { user } = useAuth();
-  const { web3Status, identityStatus } = useWallet();
+  const { user: authUser } = useAuth();
+  // const { web3Status, identityStatus } = useWallet();
+  const web3Status = { network: 'Ethereum Mainnet', balance: '1' }; // placeholder
+  const identityStatus = { pending: 0 }; // placeholder
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
-  const [user, setUser] = useState({ name: 'John Doe', email: 'john@example.com', verified: true });
+  const [user, setUser] = useState({ name: authUser?.name || 'John Doe', email: authUser?.email || 'john@example.com', verified: authUser?.verified || true });
   const imageInputRef = useRef(null);
   const location = useLocation();
 
@@ -62,46 +46,14 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     setIsEditingProfile(false);
   };
 
-  const web3Status = { connected: true, network: 'Ethereum Mainnet', balance: '1' };
-  const identityStatus = { created: true, verified: 2, pending: 1 };
+  // These seem like placeholder values, likely intended to be replaced by actual context data
+  // const web3Status = { connected: true, network: 'Ethereum Mainnet', balance: '1' };
+  // const identityStatus = { created: true, verified: 2, pending: 1 };
 
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setIsMobileOpen(!isMobileOpen);
-    } else {
-      setIsCollapsed(!isCollapsed);
+  useEffect(() => {
+    if (onCollapseChange) {
+      onCollapseChange(isCollapsed);
     }
-<<<<<<< HEAD
-  };
-
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: Activity,
-      path: '/citizen/dashboard',
-      badge: null
-    },
-    {
-      id: 'identity',
-      label: 'Identity',
-      icon: User,
-      path: '/my-identity',
-      badge: null,
-      subItems: [
-        {
-          id: 'create',
-          label: 'Create Identity',
-          path: '/create-identity'
-        },
-        {
-          id: 'manage',
-          label: 'Manage Identity',
-          path: '/my-identity'
-        }
-      ]
-    },
-=======
   }, [isCollapsed, onCollapseChange]);
 
   useEffect(() => {
@@ -126,47 +78,11 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     { id: 'overview', label: 'Overview', icon: Activity, path: '/citizen/dashboard' },
     { id: 'create-identity', label: 'Create Identity', icon: User, path: '/create-identity' },
     { id: 'my-identity', label: 'My Identity', icon: Shield, path: '/my-identity' },
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
     {
       id: 'credentials',
       label: 'Credentials',
       icon: CreditCard,
-<<<<<<< HEAD
-      path: '/citizen/credentials',
-      badge: identityStatus.pending > 0 ? identityStatus.pending : null
-    },
-    {
-      id: 'documents',
-      label: 'Documents',
-      icon: FileText,
-      path: '/citizen/documents',
-      badge: null
-    },
-    {
-      id: 'share',
-      label: 'Share',
-      icon: Share2,
-      path: '/citizen/share',
-      badge: null
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      path: '/citizen/settings',
-      badge: null
-    }
-  ];
-
-  const navigate = useNavigate();
-
-  const handleMenuClick = (path) => {
-    navigate(path);
-    if (isMobile) {
-      setIsMobileOpen(false);
-    }
-=======
-      badge: identityStatus.pending > 0 ? identityStatus.pending : null,
+      badge: identityStatus?.pending > 0 ? identityStatus.pending : null,
       path: '/citizen/credentials',
       subItems: [
         { label: 'All Credentials', path: '/citizen/credentials' },
@@ -196,9 +112,20 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   ];
 
   const MenuItem = ({ item }) => {
-    const isActive = location.pathname === item.path || 
+    const isActive = location.pathname === item.path ||
       (item.subItems && item.subItems.some(subItem => location.pathname === subItem.path));
     const [showSubItems, setShowSubItems] = useState(false);
+
+    // Determine if the current path is a sub-item of this menu item
+    const isSubItemActive = item.subItems && item.subItems.some(subItem => location.pathname === subItem.path);
+
+    useEffect(() => {
+      // If a sub-item is active, automatically expand the parent menu item
+      if (isSubItemActive) {
+        setShowSubItems(true);
+      }
+    }, [isSubItemActive]);
+
 
     return (
       <div>
@@ -206,10 +133,15 @@ const DashboardSidebar = ({ onCollapseChange }) => {
           to={item.path}
           className={({ isActive }) =>
             `group relative flex items-center px-3 py-3 mb-1 rounded-xl transition-all duration-200 cursor-pointer
-            ${isActive ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
+            ${isActive || isSubItemActive ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}
             ${isCollapsed ? 'justify-center' : 'justify-between'}`
           }
-          onClick={() => item.subItems && setShowSubItems(!showSubItems)}
+          onClick={(e) => {
+            if (item.subItems) {
+              e.preventDefault(); // Prevent navigation if there are sub-items
+              setShowSubItems(!showSubItems);
+            }
+          }}
         >
           <div className="flex items-center min-w-0">
             <item.icon size={20} className="flex-shrink-0" />
@@ -263,34 +195,11 @@ const DashboardSidebar = ({ onCollapseChange }) => {
         )}
       </div>
     );
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
   };
-
-  const MenuItem = ({ item }) => (
-    <Button
-      variant="ghost"
-      className={cn(
-        'w-full justify-start',
-        'flex items-center space-x-2 p-2 rounded-md',
-        'hover:bg-sidebar-accent transition-colors',
-        'group/sidebar-item',
-        isCollapsed ? 'justify-center' : ''
-      )}
-      onClick={() => handleMenuClick(item.path)}
-    >
-      <item.icon className="w-4 h-4" />
-      {!isCollapsed && <span>{item.label}</span>}
-      {item.badge && (
-        <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-          {item.badge}
-        </span>
-      )}
-    </Button>
-  );
 
   const SectionHeader = ({ title, icon: Icon }) => (
     <div className={`flex items-center px-3 py-2 mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${isCollapsed ? 'justify-center' : ''}`}>
-      {<Icon size={14} className={!isCollapsed ? 'mr-2' : ''} />}
+      {Icon && <Icon size={14} className={!isCollapsed ? 'mr-2' : ''} />}
       {!isCollapsed && title}
     </div>
   );
@@ -307,34 +216,24 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       <div className="space-y-2 text-xs text-gray-600">
         <div className="flex justify-between">
           <span>Network:</span>
-          <span className="font-medium text-gray-900">{web3Status.network}</span>
+          <span className="font-medium text-gray-900">{web3Status?.network}</span>
         </div>
         <div className="flex justify-between">
           <span>Balance:</span>
-          <span className="font-medium text-gray-900">{web3Status.balance}</span>
+          <span className="font-medium text-gray-900">{web3Status?.balance}</span>
         </div>
       </div>
     </div>
   );
 
   const UserProfile = () => (
-<<<<<<< HEAD
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-        <User className="w-4 h-4 text-white" />
-      </div>
-      {!isCollapsed && (
-        <div>
-          <p className="font-medium text-slate-text">{user?.name}</p>
-          <p className="text-sm text-gray-500">{user?.email}</p>
-=======
     <div className={`mx-3 mb-6 p-4 bg-white border border-gray-200 rounded-xl shadow-sm ${isCollapsed ? 'hidden' : 'block'}`}>
       <div className="flex items-center">
         <div className="relative cursor-pointer" onClick={() => imageInputRef.current.click()}>
           {profileImage ? (
-            <img 
-              src={profileImage} 
-              alt="Profile" 
+            <img
+              src={profileImage}
+              alt="Profile"
               className="w-12 h-12 rounded-full object-cover"
             />
           ) : (
@@ -342,7 +241,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
               <User size={20} className="text-white" />
             </div>
           )}
-          {user.verified && (
+          {user?.verified && (
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
               <CheckCircle size={12} className="text-white" />
             </div>
@@ -353,14 +252,14 @@ const DashboardSidebar = ({ onCollapseChange }) => {
             <div className="flex flex-col space-y-1">
               <input
                 type="text"
-                value={user.name}
+                value={user?.name || ''}
                 onChange={(e) => setUser({ ...user, name: e.target.value })}
                 className="w-full px-2 py-1 text-sm border rounded"
                 placeholder="Full Name"
               />
               <input
                 type="email"
-                value={user.email}
+                value={user?.email || ''}
                 onChange={(e) => setUser({ ...user, email: e.target.value })}
                 className="w-full px-2 py-1 text-sm border rounded"
                 placeholder="Email"
@@ -368,8 +267,8 @@ const DashboardSidebar = ({ onCollapseChange }) => {
             </div>
           ) : (
             <div>
-              <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
           )}
         </div>
@@ -403,7 +302,6 @@ const DashboardSidebar = ({ onCollapseChange }) => {
           >
             Cancel
           </button>
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
         </div>
       )}
     </div>
@@ -412,67 +310,6 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Header */}
-<<<<<<< HEAD
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="h-7 w-7"
-          >
-            <PanelLeft className="w-4 h-4" />
-          </Button>
-          <h1 className="text-xl font-bold text-slate-text">
-            {isCollapsed ? 'DISMS' : 'Digital Identity System'}
-          </h1>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMobileOpen(false)}
-            className="h-7 w-7"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
-        <nav className="space-y-1">
-          {menuItems.map((item) => (
-            <div key={item.id}>
-              <MenuItem item={item} />
-              {item.subItems && !isCollapsed && (
-                <div className="pl-4">
-                  {item.subItems.map((subItem) => (
-                    <Button
-                      key={subItem.id}
-                      variant="ghost"
-                      className={cn(
-                        'w-full justify-start',
-                        'flex items-center space-x-2 p-2 rounded-md',
-                        'hover:bg-sidebar-accent transition-colors',
-                        'text-sm'
-                      )}
-                      onClick={() => handleMenuClick(subItem.path)}
-                    >
-                      <span>{subItem.label}</span>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-4">
-        <UserProfile />
-=======
       <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
         {!isCollapsed && (
           <div className="flex items-center">
@@ -523,7 +360,6 @@ const DashboardSidebar = ({ onCollapseChange }) => {
 
       <div className="p-4 border-t border-gray-200">
         <MenuItem item={{ id: 'logout', label: 'Sign Out', icon: LogOut, path: '/logout' }} />
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
       </div>
     </div>
   );
@@ -532,14 +368,9 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     <>
       {/* Mobile overlay */}
       {isMobileOpen && (
-        <div 
-<<<<<<< HEAD
-          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 lg:hidden"
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
-=======
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
-          onClick={() => setIsMobileOpen(false)} 
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
         />
       )}
 
@@ -560,8 +391,6 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       >
         {sidebarContent}
       </div>
-<<<<<<< HEAD
-=======
 
       {/* Mobile Sidebar - uses fixed positioning for overlay */}
       <div
@@ -571,7 +400,6 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       >
         {sidebarContent}
       </div>
->>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
     </>
   );
 };

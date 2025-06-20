@@ -37,10 +37,99 @@ exports.createIdentity = async (req, res) => {
         // Upload government ID document to IPFS
         const documentImage = await uploadToIPFS(governmentId.image);
 
+<<<<<<< HEAD
+        // Off-chain ID verification before proceeding
+        const issuerServiceUrl = process.env.ISSUER_SERVICE_URL || 'http://localhost:3000/api/issuer/verify-id';
+        const axios = require('axios');
+        const verificationResponse = await axios.post(issuerServiceUrl, {
+            userId,
+            personalInfo,
+            idDocumentScan: req.body.idDocumentScan,
+            biometricData: req.body.biometricData
+        });
+
+        if (!verificationResponse.data.success) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID verification failed'
+            });
+        }
+
+        // Check if user already has an identity
+        const existingIdentity = await Identity.findOne({ userId });
+        if (existingIdentity) {
+            return res.status(400).json({
+                success: false,
+                message: 'Identity already exists for this user'
+            });
+        }
+
+        // Prepare identity data for IPFS storage
+        const identityData = {
+            personalInfo: {
+                firstName: personalInfo.firstName,
+                lastName: personalInfo.lastName,
+                dateOfBirth: personalInfo.dateOfBirth,
+                nationality: personalInfo.nationality,
+                // Store encrypted sensitive data
+                encryptedPhone: personalInfo.phone ? encrypt(personalInfo.phone) : null,
+                encryptedEmail: personalInfo.email ? encrypt(personalInfo.email) : null,
+                encryptedAddress: personalInfo.address ? encrypt(JSON.stringify(personalInfo.address)) : null
+            },
+            attributes: attributes || [],
+            metadata: {
+                createdAt: new Date().toISOString(),
+                version: '1.0'
+            }
+        };
+
+        // Store identity data on IPFS
+        const ipfsResult = await ipfs.add(JSON.stringify(identityData));
+        const metadataURI = ipfsResult.path;
+
+        // Create identity hash
+        const identityHash = '0x' + hashIdentityData({
+            walletAddress,
+            personalInfo: personalInfo,
+            timestamp: Date.now()
+        });
+
+        // Prepare blockchain transaction data
+        const transactionData = {
+            identityHash,
+            metadataURI,
+            walletAddress
+        };
+
+        // Store identity in MongoDB
+        const newIdentity = new Identity({
+            userId,
+            walletAddress,
+            identityHash,
+            metadataURI,
+            personalInfo: {
+                firstName: personalInfo.firstName,
+                lastName: personalInfo.lastName,
+                dateOfBirth: personalInfo.dateOfBirth,
+                nationality: personalInfo.nationality
+            },
+            attributes: attributes || [],
+            blockchainStatus: 'pending',
+            isActive: true
+        });
+
+        await newIdentity.save();
+
+        // Update user record
+        await User.findByIdAndUpdate(userId, {
+            hasIdentity: true,
+            walletAddress: walletAddress
+=======
         const identity = await identityService.createIdentity(userId, {
             type: governmentId.type,
             number: governmentId.number,
             image: documentImage
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
         });
 
         res.status(201).json({

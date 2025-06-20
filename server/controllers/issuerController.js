@@ -1,12 +1,12 @@
-// identity-blockchain-app/server/controllers/issuerController.js
 const User = require('../models/User');
 const Credential = require('../models/Credential');
 const CredentialTemplate = require('../models/CredentialTemplate');
+const VerificationRecord = require('../models/VerificationRecord');
 
 // Get all credential templates
 const getTemplates = async (req, res) => {
   try {
-    const templates = await CredentialTemplate.find({ issuerId: req.user.userId });
+    const templates = await CredentialTemplate.find({ issuerId: req.user.id });
     res.json({
       success: true,
       templates
@@ -30,7 +30,7 @@ const createTemplate = async (req, res) => {
       schema,
       fields,
       validityPeriod,
-      issuerId: req.user.userId
+      issuerId: req.user.id
     });
 
     await newTemplate.save();
@@ -66,7 +66,7 @@ const issueCredential = async (req, res) => {
     // Verify template exists
     const template = await CredentialTemplate.findOne({ 
       _id: templateId,
-      issuerId: req.user.userId
+      issuerId: req.user.id
     });
     if (!template) {
       return res.status(404).json({
@@ -78,7 +78,7 @@ const issueCredential = async (req, res) => {
     // Create credential
     const newCredential = new Credential({
       templateId,
-      issuerId: req.user.userId,
+      issuerId: req.user.id,
       citizenId,
       data: credentialData,
       issuedAt: new Date(),
@@ -105,7 +105,7 @@ const issueCredential = async (req, res) => {
 // Get all issued credentials
 const getIssuedCredentials = async (req, res) => {
   try {
-    const credentials = await Credential.find({ issuerId: req.user.userId })
+    const credentials = await Credential.find({ issuerId: req.user.id })
       .populate('citizenId', 'firstName lastName email')
       .populate('templateId', 'name');
 
@@ -129,7 +129,7 @@ const revokeCredential = async (req, res) => {
 
     const credential = await Credential.findOne({
       _id: credentialId,
-      issuerId: req.user.userId
+      issuerId: req.user.id
     });
 
     if (!credential) {
@@ -162,13 +162,13 @@ const revokeCredential = async (req, res) => {
 // Get issuer dashboard statistics
 const getDashboardStats = async (req, res) => {
   try {
-    const totalCredentials = await Credential.countDocuments({ issuerId: req.user.userId });
+    const totalCredentials = await Credential.countDocuments({ issuerId: req.user.id });
     const activeCredentials = await Credential.countDocuments({ 
-      issuerId: req.user.userId,
+      issuerId: req.user.id,
       status: 'active'
     });
-    const totalTemplates = await CredentialTemplate.countDocuments({ issuerId: req.user.userId });
-    const uniqueCitizens = await Credential.distinct('citizenId', { issuerId: req.user.userId });
+    const totalTemplates = await CredentialTemplate.countDocuments({ issuerId: req.user.id });
+    const uniqueCitizens = await Credential.distinct('citizenId', { issuerId: req.user.id });
 
     res.json({
       success: true,
@@ -188,11 +188,54 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// Off-chain ID verification
+const verifyUserIdentity = async (req, res) => {
+  try {
+    const { userId, personalInfo, idDocumentScan, biometricData } = req.body;
+
+    // TODO: Implement connection to government databases or secure repositories
+    // For now, simulate verification success
+    const verificationSuccess = true;
+
+    if (!verificationSuccess) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID verification failed'
+      });
+    }
+
+    // Record verification result
+    const verificationRecord = new VerificationRecord({
+      userId,
+      personalInfo,
+      idDocumentScan,
+      biometricData,
+      verifiedAt: new Date(),
+      status: 'verified'
+    });
+
+    await verificationRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'ID verification successful',
+      verificationRecord
+    });
+  } catch (error) {
+    console.error('ID verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during ID verification'
+    });
+  }
+};
+
 module.exports = {
   getTemplates,
   createTemplate,
   issueCredential,
   getIssuedCredentials,
   revokeCredential,
-  getDashboardStats
-}; 
+  getDashboardStats,
+  verifyUserIdentity
+};

@@ -17,6 +17,9 @@ router.post('/templates', issuerController.createTemplate);
 // Issue a credential
 router.post('/credentials/issue', issuerController.issueCredential);
 
+// Off-chain ID verification endpoint
+router.post('/verify-id', issuerController.verifyUserIdentity);
+
 // Get all issued credentials
 router.get('/credentials', issuerController.getIssuedCredentials);
 
@@ -26,4 +29,4 @@ router.post('/credentials/revoke', issuerController.revokeCredential);
 // Get dashboard statistics
 router.get('/dashboard/stats', issuerController.getDashboardStats);
 
-module.exports = router; 
+module.exports = router;

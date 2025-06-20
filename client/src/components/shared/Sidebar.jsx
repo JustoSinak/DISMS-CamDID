@@ -1,3 +1,26 @@
+<<<<<<< HEAD
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  User,
+  Shield,
+  CreditCard,
+  Share2,
+  Settings,
+  Activity,
+  PanelLeft,
+  X,
+  CheckCircle,
+  ChevronLeft,
+  Menu,
+  FileText
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useWallet } from '../../contexts/WalletContext';
+import { cn } from '../../utils/formatters';
+import Button from '../common/Button';
+import { useIsMobile } from '../../hooks/useAuth'; // fallback to useAuth hook or remove if not applicable
+=======
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -5,8 +28,12 @@ import {
   Lock, Database, Users, Activity, LogOut, ChevronLeft, ChevronRight,
   Wallet, Eye, CheckCircle, Menu, X
 } from 'lucide-react';
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
 
 const DashboardSidebar = ({ onCollapseChange }) => {
+  const { user } = useAuth();
+  const { web3Status, identityStatus } = useWallet();
+  const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -38,10 +65,43 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   const web3Status = { connected: true, network: 'Ethereum Mainnet', balance: '1' };
   const identityStatus = { created: true, verified: 2, pending: 1 };
 
-  useEffect(() => {
-    if (onCollapseChange) {
-      onCollapseChange(isCollapsed);
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setIsMobileOpen(!isMobileOpen);
+    } else {
+      setIsCollapsed(!isCollapsed);
     }
+<<<<<<< HEAD
+  };
+
+  const menuItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: Activity,
+      path: '/citizen/dashboard',
+      badge: null
+    },
+    {
+      id: 'identity',
+      label: 'Identity',
+      icon: User,
+      path: '/my-identity',
+      badge: null,
+      subItems: [
+        {
+          id: 'create',
+          label: 'Create Identity',
+          path: '/create-identity'
+        },
+        {
+          id: 'manage',
+          label: 'Manage Identity',
+          path: '/my-identity'
+        }
+      ]
+    },
+=======
   }, [isCollapsed, onCollapseChange]);
 
   useEffect(() => {
@@ -66,10 +126,46 @@ const DashboardSidebar = ({ onCollapseChange }) => {
     { id: 'overview', label: 'Overview', icon: Activity, path: '/citizen/dashboard' },
     { id: 'create-identity', label: 'Create Identity', icon: User, path: '/create-identity' },
     { id: 'my-identity', label: 'My Identity', icon: Shield, path: '/my-identity' },
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
     {
       id: 'credentials',
       label: 'Credentials',
       icon: CreditCard,
+<<<<<<< HEAD
+      path: '/citizen/credentials',
+      badge: identityStatus.pending > 0 ? identityStatus.pending : null
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: FileText,
+      path: '/citizen/documents',
+      badge: null
+    },
+    {
+      id: 'share',
+      label: 'Share',
+      icon: Share2,
+      path: '/citizen/share',
+      badge: null
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      path: '/citizen/settings',
+      badge: null
+    }
+  ];
+
+  const navigate = useNavigate();
+
+  const handleMenuClick = (path) => {
+    navigate(path);
+    if (isMobile) {
+      setIsMobileOpen(false);
+    }
+=======
       badge: identityStatus.pending > 0 ? identityStatus.pending : null,
       path: '/citizen/credentials',
       subItems: [
@@ -167,7 +263,30 @@ const DashboardSidebar = ({ onCollapseChange }) => {
         )}
       </div>
     );
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
   };
+
+  const MenuItem = ({ item }) => (
+    <Button
+      variant="ghost"
+      className={cn(
+        'w-full justify-start',
+        'flex items-center space-x-2 p-2 rounded-md',
+        'hover:bg-sidebar-accent transition-colors',
+        'group/sidebar-item',
+        isCollapsed ? 'justify-center' : ''
+      )}
+      onClick={() => handleMenuClick(item.path)}
+    >
+      <item.icon className="w-4 h-4" />
+      {!isCollapsed && <span>{item.label}</span>}
+      {item.badge && (
+        <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+          {item.badge}
+        </span>
+      )}
+    </Button>
+  );
 
   const SectionHeader = ({ title, icon: Icon }) => (
     <div className={`flex items-center px-3 py-2 mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${isCollapsed ? 'justify-center' : ''}`}>
@@ -199,6 +318,16 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   );
 
   const UserProfile = () => (
+<<<<<<< HEAD
+    <div className="flex items-center space-x-3">
+      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+        <User className="w-4 h-4 text-white" />
+      </div>
+      {!isCollapsed && (
+        <div>
+          <p className="font-medium text-slate-text">{user?.name}</p>
+          <p className="text-sm text-gray-500">{user?.email}</p>
+=======
     <div className={`mx-3 mb-6 p-4 bg-white border border-gray-200 rounded-xl shadow-sm ${isCollapsed ? 'hidden' : 'block'}`}>
       <div className="flex items-center">
         <div className="relative cursor-pointer" onClick={() => imageInputRef.current.click()}>
@@ -274,6 +403,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
           >
             Cancel
           </button>
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
         </div>
       )}
     </div>
@@ -282,6 +412,67 @@ const DashboardSidebar = ({ onCollapseChange }) => {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Header */}
+<<<<<<< HEAD
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="h-7 w-7"
+          >
+            <PanelLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-xl font-bold text-slate-text">
+            {isCollapsed ? 'DISMS' : 'Digital Identity System'}
+          </h1>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileOpen(false)}
+            className="h-7 w-7"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <nav className="space-y-1">
+          {menuItems.map((item) => (
+            <div key={item.id}>
+              <MenuItem item={item} />
+              {item.subItems && !isCollapsed && (
+                <div className="pl-4">
+                  {item.subItems.map((subItem) => (
+                    <Button
+                      key={subItem.id}
+                      variant="ghost"
+                      className={cn(
+                        'w-full justify-start',
+                        'flex items-center space-x-2 p-2 rounded-md',
+                        'hover:bg-sidebar-accent transition-colors',
+                        'text-sm'
+                      )}
+                      onClick={() => handleMenuClick(subItem.path)}
+                    >
+                      <span>{subItem.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-sidebar-border p-4">
+        <UserProfile />
+=======
       <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
         {!isCollapsed && (
           <div className="flex items-center">
@@ -332,6 +523,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
 
       <div className="p-4 border-t border-gray-200">
         <MenuItem item={{ id: 'logout', label: 'Sign Out', icon: LogOut, path: '/logout' }} />
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
       </div>
     </div>
   );
@@ -341,8 +533,13 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       {/* Mobile overlay */}
       {isMobileOpen && (
         <div 
+<<<<<<< HEAD
+          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+=======
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
           onClick={() => setIsMobileOpen(false)} 
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
         />
       )}
 
@@ -363,6 +560,8 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       >
         {sidebarContent}
       </div>
+<<<<<<< HEAD
+=======
 
       {/* Mobile Sidebar - uses fixed positioning for overlay */}
       <div
@@ -372,6 +571,7 @@ const DashboardSidebar = ({ onCollapseChange }) => {
       >
         {sidebarContent}
       </div>
+>>>>>>> e3fdf641ea7b2b8f08f4fbd182df61170edcd336
     </>
   );
 };

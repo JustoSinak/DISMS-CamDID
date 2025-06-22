@@ -15,28 +15,39 @@ const upload = multer({
 // All routes require authentication
 router.use(authenticate);
 
-// Create new credential
-router.post('/:identityId/credentials', 
+// Issue new credential
+router.post('/issue',
   upload.single('document'),
-  credentialController.createCredential
+  credentialController.createCredential // Assuming createCredential controller handles issue logic
 );
 
-// Get all credentials for an identity
-router.get('/:identityId/credentials', credentialController.getCredentials);
+// Get specific credential by ID
+router.get('/:id', credentialController.getCredentialById); // Assuming a new controller function getCredentialById
+
+// Get all credentials for a user
+router.get('/user/:userId', credentialController.getCredentials); // Assuming getCredentials controller handles getting by userId
 
 // Share credential
-router.post('/credentials/:credentialId/share', credentialController.shareCredential);
+router.post('/share/:id', credentialController.shareCredential);
 
 // Verify credential
-router.post('/credentials/:credentialId/verify', credentialController.verifyCredential);
+router.post('/verify/:id', credentialController.verifyCredential);
 
 // Revoke credential
-router.post('/credentials/:credentialId/revoke', credentialController.revokeCredential);
+router.put('/:id/revoke', credentialController.revokeCredential);
 
 // Generate sharing QR code
-router.post('/credentials/:credentialId/qr', credentialController.generateSharingQR);
+router.post('/share/:id/qr', credentialController.generateSharingQR);
 
-// Get credential activity
-router.get('/credentials/:credentialId/activity', credentialController.getCredentialActivity);
+// Get sharing history for a user
+router.get('/shared/:userId', credentialController.getSharingHistory); // Assuming a new controller function getSharingHistory
 
-module.exports = router; 
+// Remove the old getCredentialActivity route if it's not needed based on PRD
+// router.get('/credentials/:credentialId/activity', credentialController.getCredentialActivity);
+
+// Credential schema endpoints
+router.post('/schemas', credentialController.registerSchema);
+router.get('/schemas', credentialController.getAllSchemas);
+router.get('/schemas/:id', credentialController.getSchemaById);
+
+module.exports = router;

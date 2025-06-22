@@ -1,5 +1,10 @@
 const credentialService = require('../services/credentialService');
 const { uploadToIPFS } = require('../utils/ipfs');
+const Web3 = require('web3');
+const CredentialManagerABI = require('../../blockchain/build/contracts/CredentialManager.json').abi;
+const credentialManagerAddress = process.env.CREDENTIAL_MANAGER_ADDRESS;
+const web3 = new Web3(process.env.ETHEREUM_PROVIDER || 'http://localhost:8545');
+const credentialManager = new web3.eth.Contract(CredentialManagerABI, credentialManagerAddress);
 
 exports.createCredential = async (req, res) => {
   try {
@@ -191,5 +196,36 @@ exports.getCredentialActivity = async (req, res) => {
       success: false,
       error: error.message
     });
+  }
+};
+
+exports.registerSchema = async (req, res) => {
+  try {
+    const { schemaURI, schemaType, version } = req.body;
+    const accounts = await web3.eth.getAccounts();
+    const tx = await credentialManager.methods.registerSchema(schemaURI, schemaType, version).send({ from: accounts[0] });
+    res.json({ success: true, tx });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error registering schema', error: error.message });
+  }
+};
+
+exports.getAllSchemas = async (req, res) => {
+  try {
+    const ids = await credentialManager.methods.getAllSchemaIds().call();
+    const schemas = await Promise.all(ids.map(id => credentialManager.methods.credentialSchemas(id).call()));
+    res.json({ success: true, schemas });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching schemas', error: error.message });
+  }
+};
+
+exports.getSchemaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = await credentialManager.methods.credentialSchemas(id).call();
+    res.json({ success: true, schema });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching schema', error: error.message });
   }
 }; 

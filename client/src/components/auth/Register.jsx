@@ -9,7 +9,6 @@ import Navbar from '../Navbar';
 const Register = () => {
   const { role } = useParams(); // Get role from URL params
   const [formData, setFormData] = useState({
-    username: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -62,11 +61,6 @@ const Register = () => {
 
   const validateForm = () => {
     const errors = {};
-
-    // Username validation (optional)
-    if (formData.username && formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    }
 
     // First name validation
     if (!formData.firstName) {
@@ -151,7 +145,6 @@ const Register = () => {
               Join Cameroon's digital identity platform as a {role}
             </p>
           </div>
-          
           {success && <div style={{ color: 'green', marginBottom: '1rem' }}>{success}</div>}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             {error && (
@@ -164,30 +157,7 @@ const Register = () => {
                 {formErrors.general}
               </div>
             )}
-
             <div className="space-y-4">
-              {/* Name */}
-              <div className="relative">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                  Username
-                </label>
-                <Users className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  className={`mt-1 block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                    formErrors.username ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your username"
-                  value={formData.username}
-                  onChange={handleChange}
-                />
-                {formErrors.username && (
-                  <p className="mt-1 text-sm text-red-600">{formErrors.username}</p>
-                )}
-              </div>
-
               <div className="relative">
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                   First Name *
@@ -209,7 +179,6 @@ const Register = () => {
                   <p className="mt-1 text-sm text-red-600">{formErrors.firstName}</p>
                 )}
               </div>
-
               <div className="relative">
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                   Last Name *
@@ -231,8 +200,6 @@ const Register = () => {
                   <p className="mt-1 text-sm text-red-600">{formErrors.lastName}</p>
                 )}
               </div>
-
-              {/* Email */}
               <div className='relative'>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email Address *
@@ -254,15 +221,11 @@ const Register = () => {
                   <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
                 )}
               </div>
-
-              {/* Password */}
               <div className='relative'>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password *
                 </label>
                 <Lock className="absolute left-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
-                
-                {/* <div className="mt-1 relative"> */}
                   <input
                     id="password"
                     name="password"
@@ -284,13 +247,10 @@ const Register = () => {
                       {showPassword ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
                     </span>
                   </button>
-                {/* </div> */}
                 {formErrors.password && (
                   <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>
                 )}
               </div>
-
-              {/* Confirm Password */}
               <div className='relative'>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                   Confirm Password *
@@ -322,7 +282,6 @@ const Register = () => {
                 )}
               </div>
             </div>
-
             <div>
               <button
                 type="submit"

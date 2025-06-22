@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
 import { Camera, Upload, X, Check, AlertCircle, Loader as LoaderIcon, Shield, Lock } from 'lucide-react';
-import DashboardNavbar from '../components/dashboard/DashboardNavbar';
+// import DashboardNavbar from '../components/dashboard/DashboardNavbar';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
-import BiometricCapture from '../components/identity/BiometricCapture';
+import BiometricCapture from '../components/identity/BiometricCapture.js';
 import { ethers, HDNodeWallet } from 'ethers';
 import { create } from 'ipfs-http-client';
 import Tesseract from 'tesseract.js';
@@ -61,9 +61,8 @@ const CreateIdentity = () => {
     dateOfBirth: '',
     nationality: 'Cameroonian',
     gender: '',
-    email: '',
     phoneNumber: '',
-    termsAccepted: false, // Added terms acceptance
+    termsAccepted: false,
 
     // Step 2: Document Upload & Address
     idCardImage: null,
@@ -72,7 +71,7 @@ const CreateIdentity = () => {
     city: '',
     region: '',
 
-    // Step 3: Biometric Data (optional)
+    // Step 3: Biometric Data
     biometricConsent: false,
     biometricData: null,
 
@@ -203,7 +202,6 @@ const CreateIdentity = () => {
             errors.dateOfBirth = 'You must be at least 18 years old';
           }
         }
-        if (!formData.email) errors.email = 'Email is required';
         if (!formData.phoneNumber) {
           errors.phoneNumber = 'Phone number is required';
         } else if (!/^(\+237|237)?[6-9][0-9]{8}$/.test(formData.phoneNumber)) {
@@ -781,7 +779,14 @@ const CreateIdentity = () => {
               </div>
             </div>
             {/* Biometric Capture Component/UI goes here */}
-            <BiometricCapture onCapture={setBiometricSetup} />
+            <BiometricCapture 
+              formData={formData}
+              onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+              onNext={() => setCurrentStep(4)}
+              onBack={() => setCurrentStep(2)}
+              currentStep={3}
+              totalSteps={5}
+            />
              {formErrors.biometricData && (
               <p className="mt-1 text-sm text-red-600">{formErrors.biometricData}</p>
             )}
@@ -950,7 +955,7 @@ const CreateIdentity = () => {
 
   return (
     <MainLayout> {/* Assuming MainLayout provides the basic page structure */}
-      <DashboardNavbar />
+      {/* <DashboardNavbar /> */}
       <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <Card>

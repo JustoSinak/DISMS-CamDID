@@ -2,13 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const identityController = require('../controllers/identityController');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(authenticateToken);
 
 // Create new identity
-router.post('/', identityController.createIdentity);
+router.post('/create', identityController.createIdentity);
 
 // Verify government ID
 router.post('/:identityId/verify-government-id', identityController.verifyGovernmentId);
@@ -23,6 +23,28 @@ router.post('/:identityId/verify-contact', identityController.verifyContactInfo)
 router.post('/:identityId/finalize', identityController.finalizeIdentity);
 
 // Get identity details
-router.get('/:identityId', identityController.getIdentity);
+router.get('/:id', identityController.getIdentity);
+
+// Update identity details
+router.put('/:id', identityController.updateIdentity);
+
+// Delete identity
+router.delete('/:identityId', identityController.deleteIdentity);
+
+// @route   POST /api/identity/verify
+// @desc    Verify identity documents
+// @access  Private
+router.post('/verify', identityController.verifyIdentity);
+
+// @route   GET /api/identity/verification-status/:id
+// @desc    Get verification status
+// @access  Private
+router.get('/verification-status/:id', identityController.getVerificationStatus);
+
+// Get DID version count
+router.get('/did/:did/versions', identityController.getDIDVersionCount);
+
+// Get specific DID version
+router.get('/did/:did/version/:version', identityController.getDIDVersion);
 
 module.exports = router;

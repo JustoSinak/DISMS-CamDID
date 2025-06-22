@@ -1,12 +1,12 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/shared/Sidebar';
 import Button from '../components/common/Button';
 import { User, LogOut } from 'lucide-react';
 
-const MainLayout = () => {
+const MainLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -27,7 +27,7 @@ const MainLayout = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5 text-gray-500" />
-              <span className="text-sm font-medium">{user?.name}</span>
+              <span className="text-sm font-medium">{user?.name || user?.firstName}</span>
             </div>
             <Button
               variant="secondary"
@@ -42,9 +42,7 @@ const MainLayout = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="container mx-auto px-6 py-8">
-            <Outlet />
-          </div>
+          {children}
         </main>
       </div>
     </div>

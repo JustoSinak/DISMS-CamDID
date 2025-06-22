@@ -1,90 +1,67 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+contract AdminRegistry {
+    enum Role { None, SupportAdmin, SystemAdmin, SuperAdmin }
 
-contract AdminRegistry is AccessControl, Pausable {
-    bytes32 public constant SUPER_ADMIN_ROLE = keccak256("SUPER_ADMIN_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
-
-    event AdminAdded(address indexed admin, bytes32 role, uint256 timestamp);
-    event AdminRemoved(address indexed admin, bytes32 role, uint256 timestamp);
-    event IssuerAdded(address indexed issuer, uint256 timestamp);
-    event IssuerRemoved(address indexed issuer, uint256 timestamp);
-
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(SUPER_ADMIN_ROLE, msg.sender);
+    struct Admin {
+        address account;
+        Role role;
+        bool active;
     }
 
+    mapping(address => Admin) public admins;
+    address public owner;
+
+    event AdminAdded(address indexed admin, uint8 role, address indexed addedBy);
+    event AdminRemoved(address indexed admin, address indexed removedBy);
+    event AdminRoleUpdated(address indexed admin, uint8 oldRole, uint8 newRole);
+
     modifier onlySuperAdmin() {
-        require(hasRole(SUPER_ADMIN_ROLE, msg.sender), "Caller is not a super admin");
+        require(admins[msg.sender].role == Role.SuperAdmin, "Not super admin");
         _;
     }
 
-    // Add a new admin
-    function addAdmin(address account) external onlySuperAdmin {
-        require(account != address(0), "Invalid address");
-        require(!hasRole(ADMIN_ROLE, account), "Account is already an admin");
-
-        grantRole(ADMIN_ROLE, account);
-        emit AdminAdded(account, ADMIN_ROLE, block.timestamp);
+    modifier onlyAdmin() {
+        require(admins[msg.sender].role == Role.SuperAdmin || admins[msg.sender].role == Role.SystemAdmin, "Not admin");
+        _;
     }
 
-    // Remove an admin
-    function removeAdmin(address account) external onlySuperAdmin {
-        require(hasRole(ADMIN_ROLE, account), "Account is not an admin");
-        require(account != msg.sender, "Cannot remove self");
-
-        revokeRole(ADMIN_ROLE, account);
-        emit AdminRemoved(account, ADMIN_ROLE, block.timestamp);
+    constructor() {
+        owner = msg.sender;
+        admins[msg.sender] = Admin({ account: msg.sender, role: Role.SuperAdmin, active: true });
+        emit AdminAdded(msg.sender, uint8(Role.SuperAdmin), msg.sender);
     }
 
-    // Add a new issuer
-    function addIssuer(address account) external {
-        require(hasRole(SUPER_ADMIN_ROLE, msg.sender) || hasRole(ADMIN_ROLE, msg.sender), 
-                "Caller is not authorized");
-        require(account != address(0), "Invalid address");
-        require(!hasRole(ISSUER_ROLE, account), "Account is already an issuer");
-
-        grantRole(ISSUER_ROLE, account);
-        emit IssuerAdded(account, block.timestamp);
+    function addAdmin(address admin, uint8 role) external onlySuperAdmin {
+        require(admin != address(0), "Invalid address");
+        require(role > 0 && role <= uint8(Role.SuperAdmin), "Invalid role");
+        require(!admins[admin].active, "Already admin");
+        admins[admin] = Admin({ account: admin, role: Role(role), active: true });
+        emit AdminAdded(admin, role, msg.sender);
     }
 
-    // Remove an issuer
-    function removeIssuer(address account) external {
-        require(hasRole(SUPER_ADMIN_ROLE, msg.sender) || hasRole(ADMIN_ROLE, msg.sender), 
-                "Caller is not authorized");
-        require(hasRole(ISSUER_ROLE, account), "Account is not an issuer");
-
-        revokeRole(ISSUER_ROLE, account);
-        emit IssuerRemoved(account, block.timestamp);
+    function removeAdmin(address admin) external onlySuperAdmin {
+        require(admins[admin].active, "Not an admin");
+        admins[admin].active = false;
+        emit AdminRemoved(admin, msg.sender);
     }
 
-    // Check if an address has admin role
-    function isAdmin(address account) external view returns (bool) {
-        return hasRole(ADMIN_ROLE, account) || hasRole(SUPER_ADMIN_ROLE, account);
+    function updateAdminRole(address admin, uint8 newRole) external onlySuperAdmin {
+        require(admins[admin].active, "Not an admin");
+        require(newRole > 0 && newRole <= uint8(Role.SuperAdmin), "Invalid role");
+        uint8 oldRole = uint8(admins[admin].role);
+        admins[admin].role = Role(newRole);
+        emit AdminRoleUpdated(admin, oldRole, newRole);
     }
 
-    // Check if an address has super admin role
-    function isSuperAdmin(address account) external view returns (bool) {
-        return hasRole(SUPER_ADMIN_ROLE, account);
+    function hasPermission(address admin, bytes32 permission) external view returns (bool) {
+        // Example: implement permission matrix if needed
+        // For now, any active admin has all permissions
+        return admins[admin].active && admins[admin].role != Role.None;
     }
 
-    // Check if an address has issuer role
-    function isIssuer(address account) external view returns (bool) {
-        return hasRole(ISSUER_ROLE, account);
-    }
-
-    // Pause all contract operations
-    function pause() external onlySuperAdmin {
-        _pause();
-    }
-
-    // Unpause all contract operations
-    function unpause() external onlySuperAdmin {
-        _unpause();
+    function getAdminRole(address admin) external view returns (uint8) {
+        return uint8(admins[admin].role);
     }
 } 

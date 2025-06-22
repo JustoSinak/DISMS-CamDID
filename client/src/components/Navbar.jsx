@@ -6,7 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import Logo from '../assets/CamDID.svg';
 import { User, Settings, LogOut, Upload, Sun, Moon } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ children }) => {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -53,6 +53,27 @@ const Navbar = () => {
     }
   `;
 
+  // If children are provided, render a simple dashboard navbar
+  if (children) {
+    return (
+      <nav className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-2">
+              <img src={Logo} alt="CamDID Logo" className="w-8 h-8" />
+              <span className="text-xl font-bold text-gray-900">
+                <span className="text-emerald-500">Cam</span>
+                <span className="text-red-600">DID</span>
+              </span>
+            </Link>
+          </div>
+          {children}
+        </div>
+      </nav>
+    );
+  }
+
+  // Original navbar for main pages
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
       scrolled
@@ -163,7 +184,7 @@ const Navbar = () => {
                       }`}
                     >
                       <Link
-                        to="/citizen/dashboard"
+                        to="/dashboard/citizen"
                         className={`block px-4 py-2 text-sm ${
                           theme === "dark"
                             ? "text-gray-300 hover:bg-gray-700"

@@ -13,6 +13,7 @@ const citizenRoutes = require('./routes/citizen');
 const issuerRoutes = require('./routes/issuer');
 const verifierRoutes = require('./routes/verifier');
 const adminRoutes = require('./routes/admin');
+const identityRoutes = require('./routes/identity');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/citizen', citizenRoutes);
 app.use('/api/issuer', issuerRoutes);
 app.use('/api/verifier', verifierRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/identity', identityRoutes);
 
 // Test endpoint
 app.get('/test', (req, res) => {

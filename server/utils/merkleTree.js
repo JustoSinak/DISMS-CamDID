@@ -1,5 +1,5 @@
-const { ethers } = require('ethers');
-const { keccak256 } = require('ethers/lib/utils');
+const ethers = require('ethers');
+const keccak256 = ethers.keccak256;
 
 class MerkleTree {
   constructor(elements) {
@@ -94,4 +94,4 @@ async function createMerkleTree(elements) {
 module.exports = {
   createMerkleTree,
   MerkleTree
-}; 
+};

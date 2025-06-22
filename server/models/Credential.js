@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const CredentialSchema = new Schema({
+  // Add userId field
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true // Assuming a credential is tied to a user
+  },
   identityId: {
     type: Schema.Types.ObjectId,
     ref: 'Identity',
@@ -44,6 +50,14 @@ const CredentialSchema = new Schema({
     name: String,
     did: String,
     signature: String
+  },
+  // Add credentialHash field
+  credentialHash: {
+    type: String,
+    required: false, // Assuming hash is added after creation/issuance
+    trim: true,
+    unique: true,
+    sparse: true // Allow null values for unique index
   },
   metadata: {
     title: String,
@@ -110,6 +124,11 @@ const CredentialSchema = new Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // Add revokedAt field
+  revokedAt: {
+    type: Date,
+    required: false
   }
 });
 
@@ -124,4 +143,4 @@ CredentialSchema.index({ identityId: 1, type: 1 });
 CredentialSchema.index({ 'sharing.allowedViewers.did': 1 });
 CredentialSchema.index({ 'blockchain.transactionHash': 1 });
 
-module.exports = mongoose.model('Credential', CredentialSchema); 
+module.exports = mongoose.model('Credential', CredentialSchema);

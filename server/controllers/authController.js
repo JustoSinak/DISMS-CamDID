@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+// No changes needed here for User model import
 const { validationResult } = require('express-validator');
 
 // Generate JWT Token
@@ -46,8 +47,10 @@ const register = async (req, res) => {
 
     // Create user
     const user = await User.create({
-      firstName,
-      lastName,
+      profile: {
+        firstName,
+        lastName
+      },
       email,
       password,
       role
@@ -61,8 +64,8 @@ const register = async (req, res) => {
       token,
       user: {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
         email: user.email,
         role: user.role
       }
@@ -129,8 +132,8 @@ const login = async (req, res) => {
       token,
       user: {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
         email: user.email,
         role: user.role
       }
@@ -261,11 +264,38 @@ const logout = async (req, res) => {
   }
 };
 
+// @desc    Verify user email
+// @route   POST /api/auth/verify-email
+// @access  Public
+const verifyEmail = async (req, res) => {
+  // Placeholder implementation
+  res.status(501).json({ success: false, message: 'Verify email not implemented' });
+};
+
+// @desc    Request password reset
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  // Placeholder implementation
+  res.status(501).json({ success: false, message: 'Forgot password not implemented' });
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  // Placeholder implementation
+  res.status(501).json({ success: false, message: 'Update profile not implemented' });
+};
+
 module.exports = {
   register,
   login,
   verifyToken,
   getProfile,
   logout,
-  getMe
+  getMe,
+  verifyEmail,
+  forgotPassword,
+  updateProfile
 };

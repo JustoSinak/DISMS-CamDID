@@ -5,6 +5,7 @@ import { useIdentity } from '../../contexts/IdentityContext';
 import { Card, Button, Table, Modal, Input, Select, Textarea, Badge } from '../../components/ui';
 import { Plus, Edit2, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const MyIdentity = () => {
   const navigate = useNavigate();
@@ -24,12 +25,31 @@ const MyIdentity = () => {
   const [editingCredential, setEditingCredential] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteCredentialId, setDeleteCredentialId] = useState(null);
+  const [didVersionCount, setDidVersionCount] = useState(0);
+  const [selectedVersion, setSelectedVersion] = useState(null);
+  const [versionDetails, setVersionDetails] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (identity && identity.did) {
+      axios.get(`/api/identity/did/${identity.did}/versions`).then(res => {
+        setDidVersionCount(Number(res.data.count));
+      });
+    }
+  }, [identity]);
+
+  useEffect(() => {
+    if (identity && identity.did && selectedVersion !== null) {
+      axios.get(`/api/identity/did/${identity.did}/version/${selectedVersion}`).then(res => {
+        setVersionDetails(res.data.document);
+      });
+    }
+  }, [identity, selectedVersion]);
 
   if (!isAuthenticated) {
     return null;
@@ -324,6 +344,38 @@ const MyIdentity = () => {
           </div>
         </div>
       </Modal>
+
+      {identity && identity.did && didVersionCount > 0 && (
+        <Card className="mt-6">
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-2">DID Version History</h3>
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-sm">Select version:</span>
+              <select
+                className="border rounded px-2 py-1"
+                value={selectedVersion ?? ''}
+                onChange={e => setSelectedVersion(Number(e.target.value))}
+              >
+                <option value="" disabled>Select version</option>
+                {Array.from({ length: didVersionCount }, (_, i) => (
+                  <option key={i} value={i}>Version {i + 1}</option>
+                ))}
+              </select>
+            </div>
+            {versionDetails && (
+              <div className="bg-gray-50 p-3 rounded border">
+                <div><b>Owner:</b> {versionDetails[0]}</div>
+                <div><b>Public Key:</b> {versionDetails[1]}</div>
+                <div><b>Authentication Key:</b> {versionDetails[2]}</div>
+                <div><b>Service Endpoint:</b> {versionDetails[3]}</div>
+                <div><b>Created:</b> {new Date(Number(versionDetails[4]) * 1000).toLocaleString()}</div>
+                <div><b>Updated:</b> {new Date(Number(versionDetails[5]) * 1000).toLocaleString()}</div>
+                <div><b>Active:</b> {versionDetails[6] ? 'Yes' : 'No'}</div>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

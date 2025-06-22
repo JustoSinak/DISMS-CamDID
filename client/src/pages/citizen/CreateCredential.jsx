@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Shield,
   GraduationCap,
@@ -7,89 +7,225 @@ import {
   Stethoscope,
   Banknote,
   Upload,
-  X
+  X,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
+import MainLayout from '../../layouts/MainLayout';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import Card from '../../components/common/Card';
 
 const CreateCredential = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const { type } = useParams();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
   const [formData, setFormData] = useState({
-    type: '',
-    category: '',
+    type: type || '',
     title: '',
     description: '',
     issuer: {
       name: '',
-      did: ''
+      did: '',
+      authority: ''
     },
     expirationDate: '',
     attributes: [],
-    document: null
+    document: null,
+    verificationStatus: 'pending'
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const categories = [
-    {
-      id: 'government',
-      label: 'Government',
+  const [schemas, setSchemas] = useState([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState('');
+  const [selectedSchema, setSelectedSchema] = useState(null);
+
+  const credentialTypes = {
+    'national-id': {
+      name: 'National ID Card',
       icon: Shield,
-      types: ['government_id', 'passport', 'birth_certificate']
+      color: 'bg-blue-500',
+      category: 'Government',
+      description: 'Create a verifiable credential for your National Identity Card',
+      requiredFields: ['fullName', 'nationalIdNumber', 'dateOfBirth', 'nationality'],
+      issuer: 'Government of Cameroon'
     },
-    {
-      id: 'educational',
-      label: 'Educational',
-      icon: GraduationCap,
-      types: ['diploma', 'certificate']
-    },
-    {
-      id: 'professional',
-      label: 'Professional',
+    'drivers-license': {
+      name: 'Driver\'s License',
       icon: FileText,
-      types: ['driving_license', 'professional_certification']
+      color: 'bg-green-500',
+      category: 'Government',
+      description: 'Create a verifiable credential for your Driver\'s License',
+      requiredFields: ['fullName', 'licenseNumber', 'issueDate', 'expiryDate'],
+      issuer: 'Ministry of Transport'
     },
-    {
-      id: 'health',
-      label: 'Health',
+    'passport': {
+      name: 'Passport',
+      icon: Shield,
+      color: 'bg-purple-500',
+      category: 'Government',
+      description: 'Create a verifiable credential for your Passport',
+      requiredFields: ['fullName', 'passportNumber', 'issueDate', 'expiryDate'],
+      issuer: 'Ministry of Foreign Affairs'
+    },
+    'birth-certificate': {
+      name: 'Birth Certificate',
+      icon: FileText,
+      color: 'bg-indigo-500',
+      category: 'Government',
+      description: 'Create a verifiable credential for your Birth Certificate',
+      requiredFields: ['fullName', 'dateOfBirth', 'placeOfBirth', 'parents'],
+      issuer: 'Civil Registry'
+    },
+    'academic-diploma': {
+      name: 'Academic Diploma',
+      icon: GraduationCap,
+      color: 'bg-emerald-500',
+      category: 'Educational',
+      description: 'Create a verifiable credential for your Academic Diploma',
+      requiredFields: ['fullName', 'institution', 'degree', 'graduationDate'],
+      issuer: 'Educational Institution'
+    },
+    'professional-certificate': {
+      name: 'Professional Certificate',
+      icon: FileText,
+      color: 'bg-orange-500',
+      category: 'Professional',
+      description: 'Create a verifiable credential for your Professional Certificate',
+      requiredFields: ['fullName', 'certificationBody', 'certificateNumber', 'issueDate'],
+      issuer: 'Professional Certification Body'
+    },
+    'medical-record': {
+      name: 'Medical Record',
       icon: Stethoscope,
-      types: ['vaccination', 'medical_record']
+      color: 'bg-red-500',
+      category: 'Health',
+      description: 'Create a verifiable credential for your Medical Record',
+      requiredFields: ['fullName', 'healthcareProvider', 'recordType', 'issueDate'],
+      issuer: 'Healthcare Provider'
     },
-    {
-      id: 'financial',
-      label: 'Financial',
+    'bank-statement': {
+      name: 'Bank Statement',
       icon: Banknote,
-      types: ['bank_statement', 'credit_report']
+      color: 'bg-yellow-500',
+      category: 'Financial',
+      description: 'Create a verifiable credential for your Bank Statement',
+      requiredFields: ['fullName', 'bankName', 'accountNumber', 'statementPeriod'],
+      issuer: 'Financial Institution'
+    },
+    'employment-certificate': {
+      name: 'Employment Certificate',
+      icon: FileText,
+      color: 'bg-teal-500',
+      category: 'Professional',
+      description: 'Create a verifiable credential for your Employment Certificate',
+      requiredFields: ['fullName', 'employer', 'position', 'employmentDate'],
+      issuer: 'Employer'
+    },
+    'vaccination-record': {
+      name: 'Vaccination Record',
+      icon: Stethoscope,
+      color: 'bg-pink-500',
+      category: 'Health',
+      description: 'Create a verifiable credential for your Vaccination Record',
+      requiredFields: ['fullName', 'vaccineName', 'doseNumber', 'vaccinationDate'],
+      issuer: 'Healthcare Provider'
+    },
+    'credit-report': {
+      name: 'Credit Report',
+      icon: Banknote,
+      color: 'bg-cyan-500',
+      category: 'Financial',
+      description: 'Create a verifiable credential for your Credit Report',
+      requiredFields: ['fullName', 'creditBureau', 'reportDate', 'creditScore'],
+      issuer: 'Credit Bureau'
+    },
+    'training-certificate': {
+      name: 'Training Certificate',
+      icon: FileText,
+      color: 'bg-lime-500',
+      category: 'Educational',
+      description: 'Create a verifiable credential for your Training Certificate',
+      requiredFields: ['fullName', 'trainingProvider', 'courseName', 'completionDate'],
+      issuer: 'Training Provider'
     }
-  ];
+  };
 
-  const handleCategorySelect = (category) => {
-    setFormData({
-      ...formData,
-      category: category.id,
-      type: category.types[0]
+  const currentType = credentialTypes[type] || credentialTypes['national-id'];
+
+  useEffect(() => {
+    if (type && credentialTypes[type]) {
+      setFormData(prev => ({
+        ...prev,
+        type: type,
+        issuer: {
+          ...prev.issuer,
+          name: credentialTypes[type].issuer
+        }
+      }));
+    }
+  }, [type, credentialTypes]);
+
+  useEffect(() => {
+    axios.get('/api/credential/schemas').then(res => {
+      setSchemas(res.data.schemas || []);
     });
-    setStep(2);
+  }, []);
+
+  useEffect(() => {
+    if (selectedSchemaId) {
+      const schema = schemas.find(s => s.schemaId === selectedSchemaId);
+      setSelectedSchema(schema || null);
+    } else {
+      setSelectedSchema(null);
+    }
+  }, [selectedSchemaId, schemas]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleIssuerChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      issuer: {
+        ...prev.issuer,
+        [field]: value
+      }
+    }));
   };
 
   const handleDocumentUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setFormData({
-        ...formData,
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('File size must be less than 10MB');
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
         document: file
-      });
+      }));
+      setError(null);
     }
   };
 
   const handleAttributeAdd = () => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       attributes: [
-        ...formData.attributes,
+        ...prev.attributes,
         { name: '', value: '', isPrivate: true }
       ]
-    });
+    }));
   };
 
   const handleAttributeChange = (index, field, value) => {
@@ -98,24 +234,49 @@ const CreateCredential = () => {
       ...newAttributes[index],
       [field]: value
     };
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       attributes: newAttributes
-    });
+    }));
   };
 
   const handleAttributeRemove = (index) => {
     const newAttributes = formData.attributes.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       attributes: newAttributes
-    });
+    }));
+  };
+
+  const validateForm = () => {
+    const errors = [];
+    
+    if (!formData.title) errors.push('Title is required');
+    if (!formData.description) errors.push('Description is required');
+    if (!formData.issuer.name) errors.push('Issuer name is required');
+    if (!formData.expirationDate) errors.push('Expiration date is required');
+    if (!formData.document) errors.push('Document upload is required');
+
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    if (!selectedSchemaId) {
+      setError('Please select a credential schema.');
+      setLoading(false);
+      return;
+    }
+
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(', '));
+      setLoading(false);
+      return;
+    }
 
     try {
       const formDataToSend = new FormData();
@@ -130,15 +291,19 @@ const CreateCredential = () => {
           formDataToSend.append(key, JSON.stringify(formData[key]));
         }
       });
+      formDataToSend.append('schemaId', selectedSchemaId);
 
-      await axios.post('/api/credential/credentials', formDataToSend, {
+      await axios.post('/api/credentials', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
 
-      navigate('/citizen/credentials');
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/citizen/credentials');
+      }, 2000);
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to create credential');
     } finally {
@@ -146,256 +311,252 @@ const CreateCredential = () => {
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Add New Credential</h1>
-
-        {step === 1 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => handleCategorySelect(category)}
-                className="flex items-center p-6 bg-white rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all"
-              >
-                <category.icon className="w-8 h-8 text-blue-500" />
-                <div className="ml-4 text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {category.label}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {category.types.join(', ')}
-                  </p>
-                </div>
-              </button>
-            ))}
+  if (success) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Credential Created Successfully!</h1>
+            <p className="text-gray-600 mb-8">Your {currentType.name} credential has been created and is being verified.</p>
+            <Button onClick={() => navigate('/citizen/credentials')}>
+              View My Credentials
+            </Button>
           </div>
-        )}
+        </div>
+      </MainLayout>
+    );
+  }
 
-        {step === 2 && (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Credential Details
-              </h2>
+  return (
+    <MainLayout>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <button
+              onClick={() => navigate('/create-credential')}
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Credential Types
+            </button>
+            
+            <div className="flex items-center space-x-4">
+              <div className={`p-3 rounded-full ${currentType.color} text-white`}>
+                <currentType.icon className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Create {currentType.name}</h1>
+                <p className="text-gray-600">{currentType.description}</p>
+              </div>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    {categories
-                      .find(c => c.id === formData.category)
-                      ?.types.map(type => (
-                        <option key={type} value={type}>
-                          {type.split('_').map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1)
-                          ).join(' ')}
-                        </option>
-                      ))}
-                  </select>
+          <Card>
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                    <p className="ml-3 text-sm text-red-700">{error}</p>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Title
-                  </label>
-                  <input
-                    type="text"
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Credential Title"
+                    name="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    onChange={handleInputChange}
+                    placeholder={`${currentType.name} Credential`}
+                    required
+                  />
+                  
+                  <Input
+                    label="Expiration Date"
+                    type="date"
+                    name="expirationDate"
+                    value={formData.expirationDate}
+                    onChange={handleInputChange}
                     required
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
                   </label>
                   <textarea
+                    name="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    placeholder="Describe this credential..."
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Issuer Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.issuer.name}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      issuer: { ...formData.issuer, name: e.target.value }
-                    })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Expiration Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.expirationDate}
-                    onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Attributes
-                </h2>
-                <button
-                  type="button"
-                  onClick={handleAttributeAdd}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Add Attribute
-                </button>
               </div>
 
+              {/* Issuer Information */}
               <div className="space-y-4">
-                {formData.attributes.map((attribute, index) => (
+                <h3 className="text-lg font-semibold text-gray-900">Issuer Information</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Issuer Name"
+                    name="issuerName"
+                    value={formData.issuer.name}
+                    onChange={(e) => handleIssuerChange('name', e.target.value)}
+                    placeholder="Name of the issuing authority"
+                    required
+                  />
+                  
+                  <Input
+                    label="Issuer Authority"
+                    name="issuerAuthority"
+                    value={formData.issuer.authority}
+                    onChange={(e) => handleIssuerChange('authority', e.target.value)}
+                    placeholder="Authority or department"
+                  />
+                </div>
+              </div>
+
+              {/* Document Upload */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Document Upload</h3>
+                
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                  <div className="text-center">
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="mt-4">
+                      <label className="cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500">
+                        <span>Upload {currentType.name} document</span>
+                        <input
+                          type="file"
+                          className="sr-only"
+                          accept="image/*,.pdf"
+                          onChange={handleDocumentUpload}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      PNG, JPG, PDF up to 10MB
+                    </p>
+                  </div>
+                  
+                  {formData.document && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                        <span className="ml-2 text-sm text-green-700">
+                          {formData.document.name} uploaded successfully
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Custom Attributes */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Custom Attributes</h3>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleAttributeAdd}
+                  >
+                    Add Attribute
+                  </Button>
+                </div>
+                
+                {formData.attributes.map((attr, index) => (
                   <div key={index} className="flex items-center space-x-4">
-                    <input
-                      type="text"
-                      value={attribute.name}
-                      onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
+                    <Input
                       placeholder="Attribute name"
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      value={attr.name}
+                      onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
                     />
-                    <input
-                      type="text"
-                      value={attribute.value}
+                    <Input
+                      placeholder="Attribute value"
+                      value={attr.value}
                       onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                      placeholder="Value"
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={attribute.isPrivate}
+                        checked={attr.isPrivate}
                         onChange={(e) => handleAttributeChange(index, 'isPrivate', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
-                      <span className="ml-2 text-sm text-gray-600">Private</span>
+                      <span className="ml-2 text-sm text-gray-700">Private</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => handleAttributeRemove(index)}
-                      className="p-1 text-gray-400 hover:text-gray-500"
+                      className="text-red-600 hover:text-red-800"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Document Upload
-              </h2>
-
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                    >
-                      <span>Upload a file</span>
-                      <input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        onChange={handleDocumentUpload}
-                        accept=".pdf,.jpg,.jpeg,.png"
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
+              {/* Credential Schema Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Credential Schema</h3>
+                <select
+                  className="border rounded px-2 py-1 w-full"
+                  value={selectedSchemaId}
+                  onChange={e => setSelectedSchemaId(e.target.value)}
+                  required
+                >
+                  <option value="">Select a schema</option>
+                  {schemas.map(schema => (
+                    <option key={schema.schemaId} value={schema.schemaId}>
+                      {schema.schemaType} v{schema.version} ({schema.schemaURI})
+                    </option>
+                  ))}
+                </select>
+                {selectedSchema && (
+                  <div className="bg-gray-50 p-3 rounded border mt-2">
+                    <div><b>Type:</b> {selectedSchema.schemaType}</div>
+                    <div><b>Version:</b> {selectedSchema.version}</div>
+                    <div><b>URI:</b> {selectedSchema.schemaURI}</div>
+                    <div><b>Registered By:</b> {selectedSchema.registeredBy}</div>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    PDF, JPG, PNG up to 10MB
-                  </p>
-                </div>
+                )}
               </div>
 
-              {formData.document && (
-                <div className="mt-4 flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                  <div className="flex items-center">
-                    <FileText className="w-5 h-5 text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-600">
-                      {formData.document.name}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, document: null })}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
-                      Error
-                    </h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      {error}
-                    </div>
-                  </div>
-                </div>
+              {/* Submit Button */}
+              <div className="flex justify-end space-x-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate('/create-credential')}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  disabled={loading}
+                >
+                  Create Credential
+                </Button>
               </div>
-            )}
-
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/citizen/credentials')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Credential'}
-              </button>
-            </div>
-          </form>
-        )}
+            </form>
+          </Card>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

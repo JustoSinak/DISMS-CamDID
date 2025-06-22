@@ -5,7 +5,9 @@ import Sidebar from '../shared/Sidebar';
 import { 
   IdentificationIcon,
   DocumentCheckIcon,
-  BellIcon
+  BellIcon,
+  PlusIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline';
 
 const CitizenDashboard = () => {
@@ -26,7 +28,7 @@ const CitizenDashboard = () => {
           </div>
 
           {/* Quick Actions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {/* Digital Identity Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:border-emerald-500 transition-colors">
               <div className="flex items-center space-x-4">
@@ -38,12 +40,21 @@ const CitizenDashboard = () => {
                   <p className="text-sm text-gray-500">View and manage your digital identity</p>
                 </div>
               </div>
-              <Link
-                to="/manage-identity"
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Manage Identity
-              </Link>
+              <div className="mt-4 space-y-2">
+                <Link
+                  to="/create-identity"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 mr-2"
+                >
+                  <UserPlusIcon className="w-4 h-4 mr-2" />
+                  Create Identity
+                </Link>
+                <Link
+                  to="/manage-identity"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Manage Identity
+                </Link>
+              </div>
             </div>
 
             {/* Credentials Card */}
@@ -57,12 +68,21 @@ const CitizenDashboard = () => {
                   <p className="text-sm text-gray-500">View and share your credentials</p>
                 </div>
               </div>
-              <Link
-                to="/credentials"
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-              >
-                View Credentials
-              </Link>
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => navigate('/create-credential')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 mr-2"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Credential
+                </button>
+                <Link
+                  to="/citizen/credentials"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  View Credentials
+                </Link>
+              </div>
             </div>
 
             {/* Verification Requests Card */}

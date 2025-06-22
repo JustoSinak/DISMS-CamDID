@@ -60,6 +60,53 @@ const validateRegistration = [
     .withMessage('Invalid role')
 ];
 
+// Validation middleware for email verification
+const validateVerifyEmail = [
+  body('token')
+    .notEmpty()
+    .withMessage('Token is required')
+];
+
+// Validation middleware for forgot password
+const validateForgotPassword = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address')
+];
+
+// Validation middleware for update profile
+const validateUpdateProfile = [
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z]+$/)
+    .withMessage('First name can only contain letters'),
+
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z]+$/)
+    .withMessage('Last name can only contain letters'),
+
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+
+  body('walletAddress')
+    .optional()
+    .trim()
+    .isLength({ min: 42, max: 42 }) // Basic Ethereum address length check
+    .withMessage('Invalid wallet address format')
+];
+
 // Validation middleware for login
 const validateLogin = [
   body('email')
@@ -117,10 +164,37 @@ router.post(
   authController.login
 );
 
+// @route   POST /api/auth/verify-email
+// @desc    Verify user email
+// @access  Public
+router.post(
+  '/verify-email',
+  limiter,
+  validateVerifyEmail,
+  handleValidationErrors,
+  authController.verifyEmail
+);
+
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset
+// @access  Public
+router.post(
+  '/forgot-password',
+  limiter,
+  validateForgotPassword,
+  handleValidationErrors,
+  authController.forgotPassword
+);
+
 // @route   GET /api/auth/profile
 // @desc    Get current user profile
 // @access  Private
 router.get('/profile', authenticateToken, authController.getProfile);
+
+// @route   PUT /api/auth/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', authenticateToken, validateUpdateProfile, handleValidationErrors, authController.updateProfile);
 
 // @route   POST /api/auth/logout
 // @desc    Logout user
@@ -149,4 +223,3 @@ router.get('/verify-token', authenticateToken, (req, res) => {
 router.get('/me', roleAuth('citizen', 'verifier', 'issuer'), authController.getMe);
 
 module.exports = router;
-

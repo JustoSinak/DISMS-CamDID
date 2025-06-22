@@ -24,9 +24,9 @@ const DashboardNavbar = () => {
     { to: "/dashboard", icon: <Home className="w-4 h-4" />, text: "Dashboard" },
     { to: "/wallet", icon: <Wallet className="w-4 h-4" />, text: "Wallet" },
     { to: "/credentials", icon: <FileText className="w-4 h-4" />, text: "Credentials" },
-    { to: "/create-identity", icon: <FileText className="w-4 h-4" />, text: "Create Credential" },
+    { to: "/create-credential", icon: <FileText className="w-4 h-4" />, text: "Create Credential" },
     { to: "/share", icon: <Share2 className="w-4 h-4" />, text: "Share" },
-    { to: "/userdashboard", icon: <User className="w-4 h-4" />, text: "User Dashboard" },
+    { to: "/userdashboard", icon: <User className="w-4 h-4" />, text: "User Dashboard" }
   ];
 
   return (
@@ -194,4 +194,4 @@ const DashboardNavbar = () => {
   );
 };
 
-export default DashboardNavbar; 
+export default DashboardNavbar;

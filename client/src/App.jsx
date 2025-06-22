@@ -13,12 +13,18 @@ import About from './pages/About';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
 import CreateIdentity from './pages/CreateIdentity';
+import MyIdentity from './pages/MyIdentity';
+import ShareIdentity from './pages/ShareIdentity';
+import Settings from './pages/Settings';
+import WalletPage from './pages/WalletPage';
 import UserDashboard from './components/dashboard/UserDashboard';
 import { Web3Provider } from './contexts/Web3Context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Credentials from './pages/citizen/Credentials';
 import CreateCredential from './pages/citizen/CreateCredential';
+import ChooseCredentialType from './pages/ChooseCredentialType';
+import ManageCredentials from './pages/ManageCredentials';
 
 // Wrap component with Layout if it's a page that should have the common layout
 const withLayout = (Component) => {
@@ -41,11 +47,6 @@ function App() {
               <Route path="/about" element={withLayout(About)()} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/contact" element={withLayout(Contact)()} />
-              <Route path="/create-identity" element={
-                <PrivateRoute>
-                  {withLayout(CreateIdentity)()}
-                </PrivateRoute>
-              } />
               
               {/* Role selection routes */}
               <Route path="/register-as" element={<RoleSelection />} />
@@ -81,26 +82,75 @@ function App() {
                 }
               />
               
+              {/* Identity creation route */}
+              <Route path="/create-identity" element={
+                <PrivateRoute>
+                  <CreateIdentity />
+                </PrivateRoute>
+              } />
+              
+              {/* Identity management routes */}
+              <Route path="/my-identity" element={
+                <PrivateRoute>
+                  {withLayout(MyIdentity)()}
+                </PrivateRoute>
+              } />
+              
+              <Route path="/share-identity" element={
+                <PrivateRoute>
+                  {withLayout(ShareIdentity)()}
+                </PrivateRoute>
+              } />
+              
+              {/* Settings and Wallet routes */}
+              <Route path="/settings" element={
+                <PrivateRoute>
+                  {withLayout(Settings)()}
+                </PrivateRoute>
+              } />
+              
+              <Route path="/credential-wallet" element={
+                <PrivateRoute>
+                  {withLayout(WalletPage)()}
+                </PrivateRoute>
+              } />
+              
               {/* Redirect /dashboard to role selection if no role specified */}
               <Route path="/dashboard" element={<Navigate to="/login-as" replace />} />
               
               {/* Credential routes */}
               <Route path="/citizen/credentials" element={<Credentials />} />
               <Route path="/citizen/credentials/create" element={<CreateCredential />} />
+              <Route path="/create-credential" element={
+                <PrivateRoute>
+                  <ChooseCredentialType />
+                </PrivateRoute>
+              } />
+              <Route path="/create-credential/:type" element={
+                <PrivateRoute>
+                  <CreateCredential />
+                </PrivateRoute>
+              } />
               
               <Route
-              path="/userdashboard"
-              element={
+                path="/userdashboard"
+                element={
+                  <PrivateRoute>
+                    {withLayout(UserDashboard)()}
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Manage Credentials route */}
+              <Route path="/manage-credentials" element={
                 <PrivateRoute>
-                  {withLayout(UserDashboard)()}
+                  {withLayout(ManageCredentials)()}
                 </PrivateRoute>
-              }
-            />
+              } />
 
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-
           </Router>
         </Web3Provider>
       </AuthProvider>

@@ -6,15 +6,11 @@ import { useAuth } from '../contexts/AuthContext';
 import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import CreateIdentity from '../pages/CreateIdentity';
+import ChooseCredentialType from '../pages/ChooseCredentialType'; // Import the new page
 import ShareIdentity from '../pages/ShareIdentity';
 import ViewCredential from '../pages/ViewCredential';
 import MyIdentity from '../pages/MyIdentity';
-
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="create-identity" element={<CreateIdentity />} />
-          <Route path="share-identity" element={<ShareIdentity />} />
-          <Route path="view-credential/:credentialId" element={<ViewCredential />} />
-          <Route path="my-identity" element={<MyIdentity />} />
+import SchemaRegistry from '../pages/admin/SchemaRegistry';
 
 // Layouts
 import AuthLayout from '../layouts/AuthLayout';
@@ -51,10 +47,12 @@ const AppRoutes = () => {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="create-identity" element={<CreateIdentity />} />
+          <Route path="create-credential" element={<ChooseCredentialType />} /> {/* New route for choosing type */}
+          <Route path="create-identity/initial" element={<CreateIdentity />} /> {/* Updated route for initial identity */}
           <Route path="share-identity" element={<ShareIdentity />} />
           <Route path="view-credential/:credentialId" element={<ViewCredential />} />
           <Route path="my-identity" element={<MyIdentity />} />
+          <Route path="admin/schema-registry" element={<SchemaRegistry />} />
         </Route>
 
         {/* Share Route */}

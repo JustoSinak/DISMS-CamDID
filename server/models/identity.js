@@ -8,6 +8,12 @@ const IdentitySchema = new Schema({
         ref: 'User',
         required: true
     },
+    // Add blockchainId field
+    blockchainId: {
+      type: String,
+      required: false, // Assuming blockchain ID is added after identity creation
+      trim: true
+    },
     did: {
         type: String,
         required: true,

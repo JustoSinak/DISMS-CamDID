@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.21;
 // CredentialVerifier.sol - Credential management contract
+import "./IdentityRegistry.sol";
+
 contract CredentialVerifier {
     IdentityRegistry public identityRegistry;
     
@@ -68,7 +72,7 @@ contract CredentialVerifier {
         uint256 _expiresAt
     ) public onlyAuthorizedIssuer {
         // Check if holder has an active identity
-        (,, bool active,,) = identityRegistry.getIdentity(_holder);
+        bool active = identityRegistry.verifyIdentity(_holder);
         require(active, "Holder does not have an active identity");
         
         require(credentials[_credentialHash].credentialHash == bytes32(0), "Credential already exists");

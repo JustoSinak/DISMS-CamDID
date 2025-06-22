@@ -1,4 +1,3 @@
-// identity-blockchain-app/client/src/pages/Home.jsx
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -43,34 +42,6 @@ const Home = () => {
     'Cross-border recognition',
     'Privacy by design',
     'Government approved'
-  ];
-
-  const howItWorks = [
-    {
-      number: 1,
-      title: "Create Your Identity",
-      description: "Set up your secure digital identity backed by blockchain technology."
-    },
-    {
-      number: 2,
-      title: "Collect Credentials",
-      description: "Add verifiable credentials from trusted organizations."
-    },
-    {
-      number: 3,
-      title: "Share Securely",
-      description: "Control what you share and with whom, using selective disclosure."
-    },
-    {
-      number: 4,
-      title: "Verify Credentials",
-      description: "Allow others to verify your credentials securely and efficiently."
-    },
-    {
-      number: 5,
-      title: "Manage Your Wallet",
-      description: "Easily manage your digital credentials and identity within your secure wallet."
-    }
   ];
 
   useEffect(() => {

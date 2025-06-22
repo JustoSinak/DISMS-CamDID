@@ -13,6 +13,7 @@ const CredentialShareRequest = ({ shareLink, onClose }) => {
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [credential, setCredential] = useState(null);
+  const [errorState, setError] = useState(null);
 
   const handleDecrypt = async () => {
     try {
@@ -68,8 +69,8 @@ const CredentialShareRequest = ({ shareLink, onClose }) => {
               {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {error && (
-            <div className="mt-1 text-sm text-red-600">{error}</div>
+          {errorState && (
+            <div className="mt-1 text-sm text-red-600">{errorState}</div>
           )}
         </div>
 

@@ -5,16 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
 import CredentialShareRequest from '../components/credentials/CredentialShareRequest';
 import { Button } from '../components/common/Button';
-import { Lock, X } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 const ShareIdentity = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const { account } = useWeb3();
   const { verifyCredential, error } = useIdentity();
   const [shareLink, setShareLink] = useState(null);
-  const [credential, setCredential] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

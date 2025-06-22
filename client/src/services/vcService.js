@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { cryptoService } from './cryptoService';
 import { DIDService } from './didService';
 import { IdentityRegistry } from '../contracts/IdentityRegistry';

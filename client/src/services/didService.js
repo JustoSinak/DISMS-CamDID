@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { DIDRegistry } from '../contracts/DIDRegistry';
 import { IdentityRegistry } from '../contracts/IdentityRegistry';
 import { AccessControl } from '../contracts/AccessControl';

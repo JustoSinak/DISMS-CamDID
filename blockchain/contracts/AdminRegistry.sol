@@ -55,7 +55,7 @@ contract AdminRegistry {
         emit AdminRoleUpdated(admin, oldRole, newRole);
     }
 
-    function hasPermission(address admin, bytes32 permission) external view returns (bool) {
+    function hasPermission(address admin, bytes32 /*permission*/) external view returns (bool) {
         // Example: implement permission matrix if needed
         // For now, any active admin has all permissions
         return admins[admin].active && admins[admin].role != Role.None;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 /**
  * @title ZKVerifier
@@ -10,10 +10,10 @@ contract ZKVerifier {
     // Example interface for a zk-SNARK proof
     // Replace with actual verifier code for your circuit
     function verifyProof(
-        uint256[2] memory a,
-        uint256[2][2] memory b,
-        uint256[2] memory c,
-        uint256[] memory input
+        uint256[2] memory /*a*/,
+        uint256[2][2] memory /*b*/,
+        uint256[2] memory /*c*/,
+        uint256[] memory /*input*/
     ) public pure returns (bool r) {
         // This is a stub. Replace with actual verifier logic.
         // For now, always return true for demonstration.

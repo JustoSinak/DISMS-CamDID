@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Shield, Lock, Smartphone, Globe, Key, FileCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, Lock, Smartphone, Globe } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useTheme } from '../contexts/ThemeContext';
 

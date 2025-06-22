@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 // VerificationManager.sol - Verification management contract based on PRD
 contract VerificationManager {
@@ -50,7 +50,7 @@ contract VerificationManager {
     }
 
     // Complete verification (by verifier, potentially with proof)
-    function completeVerification(bytes32 _requestId, bytes memory _proof) external {
+    function completeVerification(bytes32 _requestId, bytes memory /*_proof*/) external {
         require(verificationRequests[_requestId].verifier == msg.sender, "Only verifier can complete");
         require(verificationRequests[_requestId].approved, "Request not approved yet");
         require(!verificationRequests[_requestId].completed, "Request already completed");

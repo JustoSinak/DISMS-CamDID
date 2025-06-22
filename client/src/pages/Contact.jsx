@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Mail, Phone, MapPin, Clock, Send, MessageSquare, ArrowRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, MessageSquare, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { useTheme } from '../contexts/ThemeContext';
 

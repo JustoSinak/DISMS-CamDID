@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.21;
 
 // CredentialManager.sol - Credential management contract based on PRD
 contract CredentialManager {

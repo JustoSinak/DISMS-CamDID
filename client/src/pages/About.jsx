@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import Navbar from '../components/Navbar';
-import { Shield, Users, Globe, Award, CheckCircle, Lock } from 'lucide-react';
+import { Shield, Users, Globe, CheckCircle, Lock } from 'lucide-react';
 
 // Fallback Card/CardContent if you don't use @/components/ui/card
 const Card = ({ children, className = "", theme }) => (

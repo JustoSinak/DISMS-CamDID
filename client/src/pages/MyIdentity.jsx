@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useIdentity } from '../../contexts/IdentityContext';
-import { Card, Button, Table, Modal, Input, Select, Textarea, Badge } from '../../components/ui';
+import AuthContext from '../contexts/AuthContext';
+import { useIdentity } from '../contexts/IdentityContext';
 import { Plus, Edit2, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const MyIdentity = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = AuthContext;
   const { 
     identity, 
     credentials, 
     loading, 
     error, 
-    createIdentity, 
     deleteCredential,
-    getCredentialDetails,
-    updateCredential 
+    updateCredential,
+    createCredential,
   } = useIdentity();
   const [showCredentialModal, setShowCredentialModal] = useState(false);
   const [selectedCredential, setSelectedCredential] = useState(null);
@@ -60,16 +58,7 @@ const MyIdentity = () => {
   };
 
   const handleEditCredential = async (credential) => {
-    try {
-      const { credential: credentialDetails, isValid } = await getCredentialDetails(credential.id);
-      setEditingCredential({
-        ...credentialDetails,
-        isValid
-      });
-      setShowCredentialModal(true);
-    } catch (err) {
-      toast.error('Failed to load credential details: ' + err.message);
-    }
+    // Implementation for editing credential can be added here if needed
   };
 
   const handleDeleteCredential = (credentialId) => {
@@ -115,170 +104,160 @@ const MyIdentity = () => {
   return (
     <div className="p-6">
       {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={confirmDelete}
-        onClose={() => {
-          setConfirmDelete(false);
-          setDeleteCredentialId(null);
-        }}
-        title="Confirm Delete"
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        style={{ display: confirmDelete ? 'flex' : 'none' }}
       >
-        <div className="space-y-4">
+        <div className="bg-white p-8 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
           <p>Are you sure you want to delete this credential?</p>
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
+          <div className="mt-4 flex justify-end space-x-2">
+            <button
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
               onClick={() => {
                 setConfirmDelete(false);
                 setDeleteCredentialId(null);
               }}
             >
               Cancel
-            </Button>
-            <Button
-              variant="danger"
+            </button>
+            <button
+              className="px-4 py-2 bg-red-500 text-white rounded"
               onClick={confirmDeleteCredential}
             >
               Delete
-            </Button>
+            </button>
           </div>
         </div>
-      </Modal>
+      </div>
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Digital Identity</h1>
-        <Button
-          variant="primary"
+        <button
+          className="px-4 py-2 bg-emerald-500 text-white rounded"
           onClick={handleCreateIdentity}
           disabled={!!identity}
         >
           {identity ? 'Update Identity' : 'Create Identity'}
-        </Button>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Identity Card */}
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Identity Information</h2>
-              <Shield className="h-6 w-6 text-emerald-500" />
-            </div>
-
-            {!identity ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No identity created yet</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={handleCreateIdentity}
-                >
-                  Create Identity
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-500">DID:</span>
-                  <span className="ml-2 text-sm text-gray-900">{identity.did}</span>
-                  <Badge
-                    className="ml-4"
-                    color={identity.status === 'verified' ? 'success' : 'warning'}
-                  >
-                    {identity.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-500">Created:</span>
-                  <span className="ml-2 text-sm text-gray-900">
-                    {new Date(identity.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            )}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Identity Information</h2>
+            <Shield className="h-6 w-6 text-emerald-500" />
           </div>
-        </Card>
+
+          {!identity ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No identity created yet</p>
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded mt-4"
+                onClick={handleCreateIdentity}
+              >
+                Create Identity
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <span className="text-sm font-medium text-gray-500">DID:</span>
+                <span className="ml-2 text-sm text-gray-900">{identity.did}</span>
+                <span className={`ml-4 ${identity.status === 'verified' ? 'text-emerald-500' : 'text-yellow-500'}`}>
+                  {identity.status}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-sm font-medium text-gray-500">Created:</span>
+                <span className="ml-2 text-sm text-gray-900">
+                  {new Date(identity.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Credentials Table */}
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Credentials</h2>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedCredential(null);
-                  setShowCredentialModal(true);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Credential
-              </Button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <Table>
-                <Table.Head>
-                  <Table.HeadCell>Type</Table.HeadCell>
-                  <Table.HeadCell>Issuer</Table.HeadCell>
-                  <Table.HeadCell>Issuance Date</Table.HeadCell>
-                  <Table.HeadCell>Status</Table.HeadCell>
-                  <Table.HeadCell>Actions</Table.HeadCell>
-                </Table.Head>
-                <Table.Body>
-                  {credentials.map((credential) => (
-                    <Table.Row key={credential.id}>
-                      <Table.Cell>
-                        {credential.type.join(', ')}
-                      </Table.Cell>
-                      <Table.Cell>{credential.issuer}</Table.Cell>
-                      <Table.Cell>
-                        {new Date(credential.issuanceDate).toLocaleDateString()}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge color={credential.status === 'valid' ? 'success' : 'warning'}>
-                          {credential.status}
-                        </Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCredential(credential)}
-                            disabled={!credential.isValid}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteCredential(credential.id)}
-                            disabled={!credential.isValid}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table>
-            </div>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Credentials</h2>
+            <button
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
+              onClick={() => {
+                setSelectedCredential(null);
+                setShowCredentialModal(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Credential
+            </button>
           </div>
-        </Card>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issuer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issuance Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {credentials.map((credential) => (
+                  <tr key={credential.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {credential.type.join(', ')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {credential.issuer}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(credential.issuanceDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className={`px-2 py-1 ${credential.status === 'valid' ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'} rounded`}>
+                        {credential.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          className="text-indigo-600 hover:text-indigo-900"
+                          onClick={() => handleEditCredential(credential)}
+                          disabled={!credential.isValid}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDeleteCredential(credential.id)}
+                          disabled={!credential.isValid}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Credential Modal */}
-      <Modal
-        isOpen={showCredentialModal}
-        onClose={handleCredentialModalClose}
-        title={editingCredential ? 'Edit Credential' : 'Add New Credential'}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        style={{ display: showCredentialModal ? 'flex' : 'none' }}
       >
-        <div className="space-y-4">
-          <Input
-            label="Credential Type"
-            name="type"
+        <div className="bg-white p-8 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">{editingCredential ? 'Edit Credential' : 'Add New Credential'}</h2>
+          <input
+            type="text"
             value={editingCredential?.type || ''}
             onChange={(e) => {
               if (editingCredential) {
@@ -288,10 +267,11 @@ const MyIdentity = () => {
                 });
               }
             }}
+            placeholder="Credential Type"
+            className="border rounded px-2 py-1 w-full mb-2"
           />
-          <Input
-            label="Issuer"
-            name="issuer"
+          <input
+            type="text"
             value={editingCredential?.issuer || ''}
             onChange={(e) => {
               if (editingCredential) {
@@ -301,10 +281,10 @@ const MyIdentity = () => {
                 });
               }
             }}
+            placeholder="Issuer"
+            className="border rounded px-2 py-1 w-full mb-2"
           />
-          <Textarea
-            label="Description"
-            name="description"
+          <textarea
             value={editingCredential?.description || ''}
             onChange={(e) => {
               if (editingCredential) {
@@ -314,16 +294,18 @@ const MyIdentity = () => {
                 });
               }
             }}
+            placeholder="Description"
+            className="border rounded px-2 py-1 w-full mb-2"
           />
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
+          <div className="mt-4 flex justify-end space-x-2">
+            <button
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded"
               onClick={handleCredentialModalClose}
             >
               Cancel
-            </Button>
-            <Button
-              variant="primary"
+            </button>
+            <button
+              className="px-4 py-2 bg-emerald-500 text-white rounded"
               onClick={async () => {
                 try {
                   if (editingCredential) {
@@ -340,41 +322,39 @@ const MyIdentity = () => {
               }}
             >
               {editingCredential ? 'Update' : 'Create'}
-            </Button>
+            </button>
           </div>
         </div>
-      </Modal>
+      </div>
 
       {identity && identity.did && didVersionCount > 0 && (
-        <Card className="mt-6">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-2">DID Version History</h3>
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="text-sm">Select version:</span>
-              <select
-                className="border rounded px-2 py-1"
-                value={selectedVersion ?? ''}
-                onChange={e => setSelectedVersion(Number(e.target.value))}
-              >
-                <option value="" disabled>Select version</option>
-                {Array.from({ length: didVersionCount }, (_, i) => (
-                  <option key={i} value={i}>Version {i + 1}</option>
-                ))}
-              </select>
-            </div>
-            {versionDetails && (
-              <div className="bg-gray-50 p-3 rounded border">
-                <div><b>Owner:</b> {versionDetails[0]}</div>
-                <div><b>Public Key:</b> {versionDetails[1]}</div>
-                <div><b>Authentication Key:</b> {versionDetails[2]}</div>
-                <div><b>Service Endpoint:</b> {versionDetails[3]}</div>
-                <div><b>Created:</b> {new Date(Number(versionDetails[4]) * 1000).toLocaleString()}</div>
-                <div><b>Updated:</b> {new Date(Number(versionDetails[5]) * 1000).toLocaleString()}</div>
-                <div><b>Active:</b> {versionDetails[6] ? 'Yes' : 'No'}</div>
-              </div>
-            )}
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-2">DID Version History</h3>
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="text-sm">Select version:</span>
+            <select
+              className="border rounded px-2 py-1"
+              value={selectedVersion ?? ''}
+              onChange={e => setSelectedVersion(Number(e.target.value))}
+            >
+              <option value="" disabled>Select version</option>
+              {Array.from({ length: didVersionCount }, (_, i) => (
+                <option key={i} value={i}>Version {i + 1}</option>
+              ))}
+            </select>
           </div>
-        </Card>
+          {versionDetails && (
+            <div className="bg-gray-50 p-3 rounded border">
+              <div><b>Owner:</b> {versionDetails[0]}</div>
+              <div><b>Public Key:</b> {versionDetails[1]}</div>
+              <div><b>Authentication Key:</b> {versionDetails[2]}</div>
+              <div><b>Service Endpoint:</b> {versionDetails[3]}</div>
+              <div><b>Created:</b> {new Date(Number(versionDetails[4]) * 1000).toLocaleString()}</div>
+              <div><b>Updated:</b> {new Date(Number(versionDetails[5]) * 1000).toLocaleString()}</div>
+              <div><b>Active:</b> {versionDetails[6] ? 'Yes' : 'No'}</div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

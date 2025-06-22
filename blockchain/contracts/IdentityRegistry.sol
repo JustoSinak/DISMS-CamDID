@@ -25,13 +25,12 @@ contract IdentityRegistry {
         require(identities[msg.sender].owner == address(0), "Identity already exists");
         require(identityHashToOwner[_identityHash] == address(0), "Identity hash already used");
 
-        identities[msg.sender] = Identity({
-            owner: msg.sender,
-            identityHash: _identityHash,
-            createdAt: block.timestamp,
-            updatedAt: block.timestamp,
-            active: true
-        });
+        Identity storage id = identities[msg.sender];
+        id.owner = msg.sender;
+        id.identityHash = _identityHash;
+        id.createdAt = block.timestamp;
+        id.updatedAt = block.timestamp;
+        id.active = true;
 
         identityHashToOwner[_identityHash] = msg.sender;
 

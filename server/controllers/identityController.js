@@ -260,7 +260,7 @@ const getVerificationStatus = async (req, res) => {
     }
 };
 
-exports.verifyGovernmentId = async (req, res) => {
+const verifyGovernmentId = async (req, res) => {
     try {
         const { identityId } = req.params;
         const { verificationData } = req.body;
@@ -282,7 +282,7 @@ exports.verifyGovernmentId = async (req, res) => {
     }
 };
 
-exports.setupBiometrics = async (req, res) => {
+const setupBiometrics = async (req, res) => {
     try {
         const { identityId } = req.params;
         const { biometricData } = req.body;
@@ -311,7 +311,7 @@ exports.setupBiometrics = async (req, res) => {
     }
 };
 
-exports.verifyContactInfo = async (req, res) => {
+const verifyContactInfo = async (req, res) => {
     try {
         const { identityId } = req.params;
         const { contactData } = req.body;
@@ -340,7 +340,7 @@ exports.verifyContactInfo = async (req, res) => {
     }
 };
 
-exports.finalizeIdentity = async (req, res) => {
+const finalizeIdentity = async (req, res) => {
     try {
         const { identityId } = req.params;
 
@@ -516,7 +516,7 @@ function encrypt(text) {
     return encrypted;
 }
 
-exports.getDIDVersionCount = async (req, res) => {
+const getDIDVersionCount = async (req, res) => {
   try {
     const { did } = req.params;
     const count = await didRegistry.methods.getDIDVersionCount(did).call();
@@ -526,7 +526,7 @@ exports.getDIDVersionCount = async (req, res) => {
   }
 };
 
-exports.getDIDVersion = async (req, res) => {
+const getDIDVersion = async (req, res) => {
   try {
     const { did, version } = req.params;
     const doc = await didRegistry.methods.getDIDVersion(did, version).call();
@@ -536,10 +536,45 @@ exports.getDIDVersion = async (req, res) => {
   }
 };
 
+const deleteIdentity = async (req, res) => {
+    try {
+        const { identityId } = req.params;
+        const identity = await UserCredential.findById(identityId);
+
+        if (!identity) {
+            return res.status(404).json({
+                success: false,
+                message: 'Identity not found'
+            });
+        }
+
+        await UserCredential.findByIdAndDelete(identityId);
+
+        res.status(200).json({
+            success: true,
+            message: 'Identity deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete identity error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete identity',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIdentity,
     getIdentity,
     updateIdentity,
     verifyIdentity,
-    getVerificationStatus
+    getVerificationStatus,
+    verifyGovernmentId,
+    setupBiometrics,
+    verifyContactInfo,
+    finalizeIdentity,
+    deleteIdentity,
+    getDIDVersionCount,
+    getDIDVersion
 };

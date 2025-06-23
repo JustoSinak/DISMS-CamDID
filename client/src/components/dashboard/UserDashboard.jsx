@@ -5,7 +5,6 @@ import { User } from 'lucide-react';
 import Sidebar from '../shared/Sidebar';
 
 const UserDashboard = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -31,10 +30,6 @@ const UserDashboard = () => {
     navigate('/create-identity');
   };
 
-  const handleCollapseChange = (collapsed) => {
-    setIsCollapsed(collapsed);
-  };
-
   // Sidebar width based on collapse state
   const sidebarWidth = isCollapsed ? 'w-20' : 'w-64';
 
@@ -53,7 +48,10 @@ const UserDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto transition-all duration-300">
+      <main className={`
+        transition-all duration-300 ease-in-out
+        ${!isCollapsed ? 'ml-64' : 'ml-16'}
+      `}>
         <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="mb-8">

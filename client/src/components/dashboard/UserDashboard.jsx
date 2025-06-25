@@ -1,125 +1,150 @@
+// import React, { useState, useEffect } from 'react';
+// import { useAuth } from '../../contexts/AuthContext';
+// import UserDashboardContent from '../shared/UserDashboardContent';
+// import Sidebar from '../shared/Sidebar';
+
+// const UserDashboard = () => {
+//   const { user } = useAuth();
+//   const [isCollapsed, setIsCollapsed] = useState(false);
+//   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+//   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+//   // Handle window resize
+//   useEffect(() => {
+//     const handleResize = () => {
+//       const newWidth = window.innerWidth;
+//       setWindowWidth(newWidth);
+      
+//       // Auto-collapse sidebar on smaller screens
+//       if (newWidth < 1024) { // lg breakpoint
+//         setIsCollapsed(true);
+//       } else if (newWidth >= 1280) { // xl breakpoint
+//         setIsCollapsed(false);
+//       }
+      
+//       // Close mobile menu on larger screens
+//       if (newWidth >= 768) { // md breakpoint
+//         setIsMobileMenuOpen(false);
+//       }
+//     };
+
+//     window.addEventListener('resize', handleResize);
+    
+//     // Set initial state
+//     handleResize();
+
+//     return () => window.removeEventListener('resize', handleResize);
+//   }, []);
+
+//   // Handle sidebar collapse
+//   const handleCollapseChange = (collapsed) => {
+//     setIsCollapsed(collapsed);
+//   };
+
+//   // Handle mobile menu
+//   const handleMobileMenuOpen = () => {
+//     setIsMobileMenuOpen(true);
+//   };
+
+//   const handleMobileMenuClose = () => {
+//     setIsMobileMenuOpen(false);
+//   };
+
+//   // Prevent body scroll when mobile menu is open
+//   useEffect(() => {
+//     if (isMobileMenuOpen) {
+//       document.body.style.overflow = 'hidden';
+//     } else {
+//       document.body.style.overflow = 'unset';
+//     }
+
+//     // Cleanup on unmount
+//     return () => {
+//       document.body.style.overflow = 'unset';
+//     };
+//   }, [isMobileMenuOpen]);
+
+//   return (
+//     <div className="min-h-screen bg-gray-50">
+//       <div className="flex h-screen">
+//         {/* Sidebar */}
+//         <Sidebar 
+//           isCollapsed={isCollapsed}
+//           onCollapseChange={handleCollapseChange}
+//           isMobileMenuOpen={isMobileMenuOpen}
+//           onMobileMenuClose={handleMobileMenuClose}
+//         />
+        
+//         {/* Main Content Area */}
+//         <div className={`
+//           flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out
+//           ${windowWidth >= 768 ? (isCollapsed ? 'md:ml-20' : 'md:ml-64') : 'ml-0'}
+//         `}>
+//           <UserDashboardContent 
+//             onMobileMenuOpen={handleMobileMenuOpen}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default UserDashboard;
+
+// ✅ UserDashboard.jsx (Cleaned Up)
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
+import UserDashboardContent from '../shared/UserDashboardContent';
 import Sidebar from '../shared/Sidebar';
 
 const UserDashboard = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // Collapse sidebar automatically on small screens
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-      if (window.innerWidth < 768) {
+      const newWidth = window.innerWidth;
+      setWindowWidth(newWidth);
+
+      if (newWidth < 1024) {
         setIsCollapsed(true);
-      } else {
+      } else if (newWidth >= 1280) {
         setIsCollapsed(false);
+      }
+
+      if (newWidth >= 768) {
+        setIsMobileMenuOpen(false);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    if (window.innerWidth < 768) setIsCollapsed(true);
+    handleResize();
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleCreateIdentity = () => {
-    navigate('/create-identity');
-  };
-
-  // Sidebar width based on collapse state
-  const sidebarWidth = isCollapsed ? 'w-20' : 'w-64';
-
-  // Adjust sidebar width for mobile
   useEffect(() => {
-    if (windowWidth < 768) {
-      setIsCollapsed(true);
-    }
-  }, [windowWidth]);
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar */}
-      <div className={`transition-all duration-300 ${sidebarWidth} shrink-0`}>
-        <Sidebar onCollapseChange={setIsCollapsed} />
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex h-screen">
+        <Sidebar
+          isCollapsed={isCollapsed}
+          onCollapseChange={setIsCollapsed}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onMobileMenuClose={() => setIsMobileMenuOpen(false)}
+        />
 
-      {/* Main Content */}
-      <main className={`
-        transition-all duration-300 ease-in-out
-        ${!isCollapsed ? 'ml-64' : 'ml-16'}
-      `}>
-        <div className="p-4 sm:p-6">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-emerald-600">Hey Welcome to your Dashboard</h1>
-            <p className="text-slate-600 mt-1">Manage your digital identity and credentials</p>
-          </div>
-
-          {/* Identity Management Section */}
-          <div className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Identity Management</h2>
-                  <p className="text-gray-500 mt-1">Create and manage your digital identity</p>
-                </div>
-                <button
-                  onClick={handleCreateIdentity}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200"
-                >
-                  Create Identity
-                </button>
-              </div>
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <div className="flex items-start space-x-4">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <User className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Digital Identity Status</h3>
-                    <p className="text-gray-500 text-sm mt-1">
-                      Create your digital identity to start using the platform's features
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[
-              { label: "Total Credentials", value: 12, change: "+2" },
-              { label: "Verifications", value: 24, change: "+5" },
-              { label: "Trust Score", value: "98%", change: "+0.5%" },
-            ].map((stat, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-semibold text-gray-900 mt-1">{stat.value}</p>
-                  </div>
-                  <div className="text-green-600">
-                    <span className="text-sm font-medium">{stat.change}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent Activity Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-            <div className="space-y-4">
-              <p className="text-gray-500 text-sm">No recent activity</p>
-            </div>
-          </div>
+        <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out
+          ${windowWidth >= 768 ? (isCollapsed ? 'md:ml-20' : 'md:ml-64') : 'ml-0'}`}>
+          <UserDashboardContent onMobileMenuOpen={() => setIsMobileMenuOpen(true)} />
         </div>
-      </main>
+      </div>
     </div>
   );
 };

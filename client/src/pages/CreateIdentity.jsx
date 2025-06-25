@@ -372,10 +372,11 @@ const CreateIdentity = () => {
 
       await response.json(); // Data is not used, so we just await the response
 
-      setSuccess('Digital identity created successfully! Your credential has been issued to your wallet. Redirecting to dashboard...');
+      
+      setSuccess('Digital identity created successfully! Redirecting to manage credentials...');
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
+        navigate('/manage-credentials'); // Redirect after creation
+       }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to create digital identity');
     } finally {

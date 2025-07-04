@@ -93,12 +93,10 @@
 
 // ✅ UserDashboard.jsx (Cleaned Up)
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import UserDashboardContent from '../shared/UserDashboardContent';
 import Sidebar from '../shared/Sidebar';
 
 const UserDashboard = () => {
-  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../contexts/AuthContext';
 import { useIdentity } from '../contexts/IdentityContext';
-import { Plus, Edit2, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 

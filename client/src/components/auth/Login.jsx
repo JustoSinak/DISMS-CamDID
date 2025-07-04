@@ -30,7 +30,9 @@ const Login = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Auth state changed:', { isAuthenticated, role });
     if (isAuthenticated) {
+      console.log('Redirecting to:', `/dashboard/${role}`);
       navigate(`/dashboard/${role}`);
     }
   }, [isAuthenticated, navigate, role]);
@@ -90,10 +92,13 @@ const Login = () => {
       };
       
       const result = await login(loginData);
+      console.log('Login result:', result);
       if (result && result.success) {
         setSuccess('Login successful! Redirecting to dashboard...');
+        console.log('Login successful, isAuthenticated should be:', isAuthenticated);
         // Add a small delay to show the success message
         setTimeout(() => {
+          console.log('Manual redirect to:', `/dashboard/${role}`);
           navigate(`/dashboard/${role}`);
         }, 1500);
       } else {

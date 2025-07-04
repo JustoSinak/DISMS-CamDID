@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 // import { Web3Context } from '../contexts/Web3Context';
 import Logo from '../assets/CamDID.svg';
-import { User, Settings, LogOut, Upload, Sun, Moon } from 'lucide-react';
+import { User, Settings, LogOut, Sun, Moon } from 'lucide-react';
 
 const Navbar = ({ children }) => {
   const location = useLocation();
@@ -29,11 +29,7 @@ const Navbar = ({ children }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Format Ethereum address for display
-  const formatAddress = (address) => {
-    if (!address) return '';
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
+
 
   const handleLogout = () => {
     logout();

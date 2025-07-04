@@ -50,9 +50,30 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev')
-.then(() => console.log('✅ Connected to MongoDB'))
-.catch((error) => console.error('MongoDB connection error:', error));
+// MongoDB connection with proper options for Atlas
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      bufferCommands: false, // Disable mongoose buffering
+    });
+
+    console.log('✅ Connected to MongoDB');
+    console.log(`📍 Database: ${conn.connection.name}`);
+    console.log(`🌐 Host: ${conn.connection.host}:${conn.connection.port}`);
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    console.error('🔍 Connection string being used:', process.env.MONGO_URI ? 'Atlas URI (hidden for security)' : 'Local fallback');
+    process.exit(1);
+  }
+};
+
+// Connect to database
+connectDB();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/citizen', citizenRoutes);

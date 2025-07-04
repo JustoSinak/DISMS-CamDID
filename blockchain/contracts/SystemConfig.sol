@@ -38,14 +38,14 @@ contract SystemConfig {
     event EmergencyPause(address indexed by, uint256 timestamp);
 
     modifier onlyAdmin() {
-        (, uint8 role, bool active) = adminRegistry.admins(msg.sender);
-        require(active && role > 0, "Not admin");
+        (bool exists, IAdminRegistry.AdminRole role, bool active) = adminRegistry.admins(msg.sender);
+        require(exists && active && role != IAdminRegistry.AdminRole.None, "Not admin");
         _;
     }
 
     modifier onlySystemAdmin() {
-        (, uint8 role, bool active) = adminRegistry.admins(msg.sender);
-        require(active && (role == 2 || role == 3), "Not system admin"); // SystemAdmin or SuperAdmin
+        (bool exists, IAdminRegistry.AdminRole role, bool active) = adminRegistry.admins(msg.sender);
+        require(exists && active && (role == IAdminRegistry.AdminRole.SystemAdmin || role == IAdminRegistry.AdminRole.SuperAdmin), "Not system admin");
         _;
     }
 

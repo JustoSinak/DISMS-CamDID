@@ -23,6 +23,12 @@ contract AdminRegistry {
     mapping(address => Admin) public admins;
     mapping(address => mapping(bytes32 => Permission)) public permissions;
     mapping(bytes32 => bool) public validPermissions;
+
+    // Function to get admin role and active status
+    function getAdminRoleAndStatus(address admin) public view returns (uint8 role, bool active) {
+        Admin storage adminData = admins[admin];
+        return (uint8(adminData.role), adminData.active);
+    }
     
     address public owner;
     uint256 public totalAdmins;

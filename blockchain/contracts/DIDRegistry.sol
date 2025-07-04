@@ -5,6 +5,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract DIDRegistry is Ownable, Pausable {
+    constructor() Ownable(msg.sender) {
+        _pause();
+    }
     struct DIDDocument {
         address owner;
         string publicKey;
@@ -25,7 +28,7 @@ contract DIDRegistry is Ownable, Pausable {
     event DIDUpdated(string indexed did, address indexed owner, uint256 timestamp, uint256 version);
     event DIDDeactivated(string indexed did, uint256 timestamp);
 
-    constructor() {}
+    // Removed duplicate empty constructor
 
     // Create a new DID
     function createDID(

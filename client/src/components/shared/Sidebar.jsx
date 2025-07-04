@@ -200,7 +200,6 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   FaHome,
-  FaIdCard,
   FaShareAlt,
   FaWallet,
   FaCog,

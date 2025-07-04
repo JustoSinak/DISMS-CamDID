@@ -1,7 +1,7 @@
 const credentialService = require('../services/credentialService');
 const { uploadToIPFS } = require('../utils/ipfs');
 const Web3 = require('web3');
-const CredentialManagerABI = require('../../blockchain/build/contracts/CredentialManager.json').abi;
+const CredentialManagerABI = require('../blockchain/build/contracts/CredentialManager.json').abi;
 const credentialManagerAddress = process.env.CREDENTIAL_MANAGER_ADDRESS;
 const web3 = new Web3(process.env.ETHEREUM_PROVIDER || 'http://localhost:8545');
 const credentialManager = new web3.eth.Contract(CredentialManagerABI, credentialManagerAddress);

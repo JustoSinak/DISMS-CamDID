@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import Button from '../common/Button';
 import Alert from '../common/Alert';
 import { Fingerprint, User } from 'lucide-react';
-import { useIdentity } from '../../contexts/IdentityContext';
 
 const BiometricCapture = ({ formData, onChange, onNext, onBack, currentStep, totalSteps }) => {
-  const [biometricData, setBiometricData] = useState(null);
   const [biometricConsent, setBiometricConsent] = useState(formData.biometricConsent);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { web3 } = useIdentity(); // Keep web3 for potential future use or if useIdentity has side effects
 
   const handleFingerprintCapture = async () => {
     try {
@@ -56,7 +53,6 @@ const BiometricCapture = ({ formData, onChange, onNext, onBack, currentStep, tot
         }
       };
 
-      setBiometricData(credentialData);
       onChange('biometricData', credentialData);
     } catch (err) {
       setError(err.message);

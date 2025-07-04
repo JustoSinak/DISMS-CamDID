@@ -30,6 +30,16 @@ import Settings from './pages/Settings';
 import WalletPage from './pages/WalletPage';
 import Credentials from './pages/citizen/Credentials';
 
+// Issuer Pages
+import PendingRequests from './pages/issuer/PendingRequests';
+import IssuedCredentials from './pages/issuer/IssuedCredentials';
+import RevokeCredentials from './pages/issuer/RevokeCredentials';
+import ManageTemplates from './pages/issuer/ManageTemplates';
+
+// Verifier Pages
+import VerifyCredential from './pages/verifier/VerifyCredential';
+import VerificationHistory from './pages/verifier/VerificationHistory';
+
 const withLayout = (Component) => (props) => (
   <Layout>
     <Component {...props} />
@@ -59,6 +69,16 @@ function App() {
               <Route path="/dashboard/citizen" element={<PrivateRoute><UserDashboard /></PrivateRoute>} />
               <Route path="/dashboard/issuer" element={<PrivateRoute><IssuerDashboard /></PrivateRoute>} />
               <Route path="/dashboard/verifier" element={<PrivateRoute><VerifierDashboard /></PrivateRoute>} />
+
+              {/* Issuer Routes */}
+              <Route path="/issuer/pending-requests" element={<PrivateRoute><PendingRequests /></PrivateRoute>} />
+              <Route path="/issuer/issued-credentials" element={<PrivateRoute><IssuedCredentials /></PrivateRoute>} />
+              <Route path="/issuer/revoke-credentials" element={<PrivateRoute><RevokeCredentials /></PrivateRoute>} />
+              <Route path="/issuer/manage-templates" element={<PrivateRoute><ManageTemplates /></PrivateRoute>} />
+
+              {/* Verifier Routes */}
+              <Route path="/verifier/verify-credential" element={<PrivateRoute><VerifyCredential /></PrivateRoute>} />
+              <Route path="/verifier/verification-history" element={<PrivateRoute><VerificationHistory /></PrivateRoute>} />
 
               {/* Credential Creation Flow */}
               <Route path="/create-credential" element={<PrivateRoute><ChooseCredentialType /></PrivateRoute>} />

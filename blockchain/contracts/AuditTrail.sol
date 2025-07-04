@@ -66,7 +66,7 @@ contract AuditTrail {
     );
 
     modifier onlyAdmin() {
-        (, uint8 role, bool active) = adminRegistry.admins(msg.sender);
+        (uint8 role, bool active) = adminRegistry.getAdminRoleAndStatus(msg.sender);
         require(active && role > 0, "Not admin");
         _;
     }
@@ -247,7 +247,7 @@ contract AuditTrail {
         uint256 totalAdmins,
         uint256 totalActions,
         uint256 lastEntryTime,
-        uint256 totalComplianceReports
+        uint256 totalComplianceReportsParam
     ) {
         return (
             totalAuditEntries,

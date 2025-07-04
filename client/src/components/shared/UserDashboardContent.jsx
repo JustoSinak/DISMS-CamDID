@@ -212,8 +212,7 @@
 
 // ✅ UserDashboardContent.jsx (Modified)
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   IdentificationIcon,
   DocumentCheckIcon,
@@ -224,8 +223,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 const UserDashboardContent = ({ onMobileMenuOpen }) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
 
   return (
     <main className="flex-1 overflow-auto">

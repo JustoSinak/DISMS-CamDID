@@ -1,4 +1,4 @@
-const Identity = require('../models/Identity');
+const Identity = require('../models/identity');
 const crypto = require('crypto');
 const { ethers } = require('ethers');
 const { createMerkleTree } = require('../utils/merkleTree');

@@ -1,5 +1,5 @@
 // controllers/identityController.js
-const Identity = require('../models/Identity');
+const Identity = require('../models/identity');
 const User = require('../models/User');
 const crypto = require('crypto');
 const Web3 = require('web3');

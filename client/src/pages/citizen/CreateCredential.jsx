@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Shield,
@@ -44,7 +44,7 @@ const CreateCredential = () => {
   const [selectedSchemaId, setSelectedSchemaId] = useState('');
   const [selectedSchema, setSelectedSchema] = useState(null);
 
-  const credentialTypes = {
+  const credentialTypes = useMemo(() => ({
     'national-id': {
       name: 'National ID Card',
       icon: Shield,
@@ -153,7 +153,7 @@ const CreateCredential = () => {
       requiredFields: ['fullName', 'trainingProvider', 'courseName', 'completionDate'],
       issuer: 'Training Provider'
     }
-  };
+  }), []);
 
   const currentType = credentialTypes[type] || credentialTypes['national-id'];
 

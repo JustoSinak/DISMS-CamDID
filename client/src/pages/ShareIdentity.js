@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIdentity } from '../contexts/IdentityContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useWeb3 } from '../contexts/Web3Context';
+
 import CredentialShareRequest from '../components/credentials/CredentialShareRequest';
 import { Button } from '../components/common/Button';
 import { Lock } from 'lucide-react';

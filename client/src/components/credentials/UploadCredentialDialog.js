@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, UploadCloud } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { useIdentity } from '../../contexts/IdentityContext';

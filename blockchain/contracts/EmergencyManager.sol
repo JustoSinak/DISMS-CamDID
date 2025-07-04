@@ -7,7 +7,7 @@ contract EmergencyManager {
     IAdminRegistry public adminRegistry;
     
     enum EmergencyLevel { None, Low, Medium, High, Critical }
-    enum EmergencyType { Security, Technical, Compliance, Natural }
+    enum EmergencyType { None, Security, Technical, Compliance, Natural }
     
     struct Emergency {
         uint256 emergencyId;
@@ -83,13 +83,13 @@ contract EmergencyManager {
     event BackupAdminRemoved(address indexed admin, address indexed removedBy);
 
     modifier onlyAdmin() {
-        (, uint8 role, bool active) = adminRegistry.admins(msg.sender);
+        (uint8 role, bool active) = adminRegistry.getAdminRoleAndStatus(msg.sender);
         require(active && role > 0, "Not admin");
         _;
     }
 
     modifier onlySuperAdmin() {
-        (, uint8 role, bool active) = adminRegistry.admins(msg.sender);
+        (uint8 role, bool active) = adminRegistry.getAdminRoleAndStatus(msg.sender);
         require(active && role == 3, "Not super admin");
         _;
     }
@@ -180,7 +180,7 @@ contract EmergencyManager {
     function createRecoveryPlan(
         uint256 emergencyId,
         address newAdmin,
-        address[] memory backupAdmins,
+        address[] memory backupAdminsParam,
         string memory recoverySteps
     ) external onlySuperAdmin returns (uint256) {
         require(emergencies[emergencyId].emergencyId != 0, "Emergency not found");
@@ -192,7 +192,7 @@ contract EmergencyManager {
             planId: planId,
             emergencyId: emergencyId,
             newAdmin: newAdmin,
-            backupAdmins: backupAdmins,
+            backupAdmins: backupAdminsParam,
             activationTime: 0,
             isActivated: false,
             recoverySteps: recoverySteps
@@ -292,7 +292,7 @@ contract EmergencyManager {
         uint256 active,
         EmergencyLevel currentLevel,
         uint256 lastEmergency,
-        uint256 totalRecoveryPlans
+        uint256 totalRecoveryPlansParam
     ) {
         return (
             totalEmergencies,

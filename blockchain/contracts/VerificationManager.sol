@@ -38,9 +38,7 @@ contract VerificationManager {
     }
 
     modifier validCredential(bytes32 _credentialHash) {
-        require(credentialVerifier.credentials(_credentialHash).active, "Credential not active");
-        require(!credentialVerifier.credentials(_credentialHash).revoked, "Credential revoked");
-        require(block.timestamp <= credentialVerifier.credentials(_credentialHash).expiresAt, "Credential expired");
+        require(credentialVerifier.verifyCredential(_credentialHash), "Credential not valid");
         _;
     }
 
@@ -87,9 +85,9 @@ contract VerificationManager {
     mapping(address => mapping(bytes32 => uint256)) public verificationScores; // holder -> credential -> score
 
     // Policy management
-    event PolicyUpdated(CredentialTypes.CredentialType indexed credentialType, VerificationPolicy policy);
+    event PolicyUpdated(CredentialTypes.CredentialType indexed credentialType);
     event PolicyRemoved(CredentialTypes.CredentialType indexed credentialType);
-    event PolicyAdded(CredentialTypes.CredentialType indexed credentialType, VerificationPolicy policy);
+    event PolicyAdded(CredentialTypes.CredentialType indexed credentialType);
     
     // Verification events
     event VerificationRequested(bytes32 indexed requestId, address indexed verifier, address indexed holder);
@@ -98,21 +96,28 @@ contract VerificationManager {
     event VerificationFailed(bytes32 indexed requestId, string reason);
     event VerificationScoreUpdated(bytes32 indexed credentialHash, uint256 score); // Holder's verification requests
 
-    // Events
-    event VerificationRequested(bytes32 indexed requestId, address indexed verifier, address indexed holder);
-    event VerificationApproved(bytes32 indexed requestId);
-    event VerificationCompleted(bytes32 indexed requestId);
+
 
     // Policy management functions
     function setVerificationPolicy(
         CredentialTypes.CredentialType _credentialType,
-        VerificationPolicy memory _policy
-    ) 
-        external 
+        uint256 _minimumVerifications,
+        uint256 _maxAge,
+        bool _requiresBiometric,
+        uint256 _verificationThreshold,
+        bool _requiresRenewalCheck
+    )
+        external
         onlyAdmin()
     {
-        verificationPolicies[_credentialType] = _policy;
-        emit PolicyUpdated(_credentialType, _policy);
+        VerificationPolicy storage policy = verificationPolicies[_credentialType];
+        policy.minimumVerifications = _minimumVerifications;
+        policy.maxAge = _maxAge;
+        policy.requiresBiometric = _requiresBiometric;
+        policy.verificationThreshold = _verificationThreshold;
+        policy.requiresRenewalCheck = _requiresRenewalCheck;
+
+        emit PolicyUpdated(_credentialType);
     }
 
     function removeVerificationPolicy(CredentialTypes.CredentialType _credentialType)
@@ -142,15 +147,14 @@ contract VerificationManager {
             block.timestamp
         ));
 
-        verificationRequests[requestId] = VerificationRequest({
-            verifier: msg.sender,
-            holder: _holder,
-            requestedCredentials: _credentials,
-            timestamp: block.timestamp,
-            approved: false,
-            completed: false,
-            proofs: _proofs
-        });
+        VerificationRequest storage request = verificationRequests[requestId];
+        request.verifier = msg.sender;
+        request.holder = _holder;
+        request.requestedCredentials = _credentials;
+        request.timestamp = block.timestamp;
+        request.approved = false;
+        request.completed = false;
+        request.proofs = _proofs;
 
         userVerifications[_holder].push(requestId);
 
@@ -172,7 +176,7 @@ contract VerificationManager {
         require(!request.completed, "Request already completed");
 
         // Get credential type
-        CredentialTypes.CredentialType credentialType = credentialVerifier.credentials(_credentialHash).credentialType;
+        (, , CredentialTypes.CredentialType credentialType, , , , , ) = credentialVerifier.getCredential(_credentialHash);
         VerificationPolicy storage policy = verificationPolicies[credentialType];
 
         // Check verification requirements

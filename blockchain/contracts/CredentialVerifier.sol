@@ -116,10 +116,10 @@ contract CredentialVerifier {
     function issueCredential(
         address _holder,
         bytes32 _credentialHash,
-        string memory _credentialType,
+        CredentialTypes.CredentialType _credentialType,
         string memory _metadataURI,
         uint256 _expiresAt
-    ) public onlyAuthorizedIssuer {
+    ) public onlyAuthorizedIssuer returns (bytes32) {
         // Check if holder has an active identity
         bool active = identityRegistry.verifyIdentity(_holder);
         require(active, "Holder does not have an active identity");
@@ -127,17 +127,16 @@ contract CredentialVerifier {
         require(credentials[_credentialHash].credentialHash == bytes32(0), "Credential already exists");
         require(_expiresAt > block.timestamp, "Expiration date must be in the future");
         
-        credentials[_credentialHash] = Credential({
-            credentialHash: _credentialHash,
-            issuer: msg.sender,
-            holder: _holder,
-            credentialType: _credentialType,
-            metadataURI: _metadataURI,
-            issuedAt: block.timestamp,
-            expiresAt: _expiresAt,
-            revoked: false,
-            active: true
-        });
+        Credential storage newCredential = credentials[_credentialHash];
+        newCredential.credentialHash = _credentialHash;
+        newCredential.issuer = msg.sender;
+        newCredential.holder = _holder;
+        newCredential.credentialType = _credentialType;
+        newCredential.metadataURI = _metadataURI;
+        newCredential.issuedAt = block.timestamp;
+        newCredential.expiresAt = _expiresAt;
+        newCredential.revoked = false;
+        newCredential.active = true;
         
         holderCredentials[_holder].push(_credentialHash);
         issuerCredentials[msg.sender].push(_credentialHash);
@@ -146,7 +145,7 @@ contract CredentialVerifier {
             _credentialHash,
             _holder,
             msg.sender,
-            credentialMetadataStore.getCredentialMetadata(CredentialTypes.CredentialType(uint8(keccak256(abi.encodePacked(_credentialType))))).name
+            credentialMetadataStore.getCredentialMetadata(_credentialType).name
         );
         
         return _credentialHash;
@@ -166,7 +165,11 @@ contract CredentialVerifier {
         require(!credentialRequests[_verifier][_credentialHash], "Verification already requested");
         
         credentialRequests[_verifier][_credentialHash] = true;
-        credentials[_credentialHash].proofs.push(_proofs);
+
+        // Add each proof to the credential's proofs array
+        for (uint256 i = 0; i < _proofs.length; i++) {
+            credentials[_credentialHash].proofs.push(_proofs[i]);
+        }
         
         emit VerificationRequested(_credentialHash, msg.sender, _verifier);
         return true;
@@ -209,7 +212,7 @@ contract CredentialVerifier {
     
     // Verify a credential
     function verifyCredential(bytes32 _credentialHash) public view returns (bool) {
-        Credential memory cred = credentials[_credentialHash];
+        Credential storage cred = credentials[_credentialHash];
         return (
             cred.active &&
             !cred.revoked &&
@@ -222,14 +225,14 @@ contract CredentialVerifier {
     function getCredential(bytes32 _credentialHash) public view returns (
         address issuer,
         address holder,
-        string memory credentialType,
+        CredentialTypes.CredentialType credentialType,
         string memory metadataURI,
         uint256 issuedAt,
         uint256 expiresAt,
         bool revoked,
         bool active
     ) {
-        Credential memory cred = credentials[_credentialHash];
+        Credential storage cred = credentials[_credentialHash];
         return (
             cred.issuer,
             cred.holder,

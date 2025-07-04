@@ -52,14 +52,19 @@ app.use(morgan('dev'));
 
 // MongoDB connection with proper options for Atlas
 const connectDB = async () => {
+  const connectionOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 50000, // Increased timeout to 50s
+    socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+    bufferCommands: false, // Disable mongoose buffering
+  };
+
+  // Removed detailed connection options logging to avoid terminal clutter
+  // console.log('Attempting to connect to MongoDB with options:', connectionOptions);
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000, // Increased timeout to 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      bufferCommands: false, // Disable mongoose buffering
-    });
+    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev', connectionOptions);
 
     console.log('✅ Connected to MongoDB');
     console.log(`📍 Database: ${conn.connection.name}`);
@@ -75,8 +80,17 @@ const connectDB = async () => {
     mongoose.connection.on('disconnected', () => {
       console.warn('Mongoose disconnected');
     });
+    mongoose.connection.on('reconnecting', () => {
+      console.log('Mongoose reconnecting...');
+    });
+    mongoose.connection.on('reconnected', () => {
+      console.log('Mongoose reconnected');
+    });
+    mongoose.connection.on('close', () => {
+      console.log('Mongoose connection closed');
+    });
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error:', error.stack || error);
     console.error('🔍 Connection string being used:', process.env.MONGO_URI ? 'Atlas URI (hidden for security)' : 'Local fallback');
     process.exit(1);
   }

@@ -94,13 +94,13 @@ contract CredentialSharing is EIP712 {
 
         string memory qrData = string(abi.encodePacked(
             "DISMS:credential://",
-            _credentialHash.toString(),
+            Strings.toHexString(uint256(_credentialHash), 32),
             "?sharer=",
             Strings.toHexString(uint160(msg.sender), 20),
             "&recipient=",
             Strings.toHexString(uint160(_recipient), 20),
             "&expiration=",
-            _expirationTime.toString(),
+            Strings.toString(_expirationTime),
             "&shareId=",
             Strings.toHexString(uint256(shareId), 32)
         ));
@@ -153,13 +153,13 @@ contract CredentialSharing is EIP712 {
         string memory link = string(abi.encodePacked(
             "https://dism.id/share?",
             "credentialHash=",
-            _credentialHash.toString(),
+            Strings.toHexString(uint256(_credentialHash), 32),
             "&sharer=",
             Strings.toHexString(uint160(msg.sender), 20),
             "&recipient=",
             Strings.toHexString(uint160(_recipient), 20),
             "&expiration=",
-            _expirationTime.toString(),
+            Strings.toString(_expirationTime),
             "&shareId=",
             Strings.toHexString(uint256(shareId), 32)
         ));

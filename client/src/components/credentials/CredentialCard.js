@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Check, X, Clock, Shield } from 'lucide-react';
+import { useIdentity } from '../../contexts/IdentityContext';
 
 const CredentialStatus = ({ status }) => {
   const statusMap = {
@@ -21,12 +22,23 @@ const CredentialStatus = ({ status }) => {
 };
 
 const CredentialCard = ({ credential, onShare, onRevoke, onView }) => {
-  // These would be managed by parent component or through props
-  const decryptedData = null;
-  const isLoading = false;
-  const error = null;
+  const { decryptCredential } = useIdentity();
+  const [decryptedData, setDecryptedData] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
 
-
+  const handleView = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const decrypted = await decryptCredential(credential.encryptedData, credential.encryptionKey);
+      setDecryptedData(decrypted);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Format expiration date
   const formatDate = (dateStr) => {

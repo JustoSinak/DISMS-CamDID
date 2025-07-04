@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
-import { Eye, EyeOff, X } from 'lucide-react';
+import { Lock, Eye, EyeOff, X } from 'lucide-react';
 import { useIdentity } from '../../contexts/IdentityContext';
+import { useWeb3 } from '../../contexts/Web3Context';
 
 const CredentialShareRequest = ({ shareLink, onClose }) => {
-  const { decryptCredential } = useIdentity();
+  const { decryptCredential, error } = useIdentity();
+  const { account } = useWeb3();
   const [encryptionKey, setEncryptionKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);

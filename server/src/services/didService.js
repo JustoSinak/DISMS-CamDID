@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('../utils/crypto');
-const DIDRegistry = require('../../../blockchain/build/contracts/DIDRegistry.json');
+const DIDRegistry = require('../../blockchain/build/contracts/DIDRegistry.json');
 const config = require('../config');
 
 class DIDService {

@@ -1,4 +1,4 @@
- const User = require('../models/User');
+const User = require('../models/User');
 const Credential = require('../models/Credential');
 const Identity = require('../models/identity');
 const VerificationRecord = require('../models/VerificationRecord');

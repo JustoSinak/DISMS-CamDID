@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { Copy, Share2 } from 'lucide-react';
+import { X, Check, Copy, Share2 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { useIdentity } from '../../contexts/IdentityContext';
+import { useWeb3 } from '../../contexts/Web3Context';
 import { QRCodeSVG } from 'qrcode.react';
 
 const ShareCredentialDialog = ({ credential, onClose, open }) => {
-  const { shareCredential } = useIdentity();
+  const { shareCredential, error } = useIdentity();
+  const { account } = useWeb3();
   const [recipient, setRecipient] = useState('');
   const [loading, setLoading] = useState(false);
   const [shareLink, setShareLink] = useState(null);

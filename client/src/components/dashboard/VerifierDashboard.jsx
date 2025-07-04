@@ -1,7 +1,11 @@
 import React from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../shared/Sidebar';
 
 const VerifierDashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="flex h-screen bg-gray-50">

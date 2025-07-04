@@ -6,9 +6,13 @@ import CredentialCard from './CredentialCard';
 import ShareCredentialDialog from './ShareCredentialDialog';
 import UploadCredentialDialog from './UploadCredentialDialog';
 import { useIdentity } from '../../contexts/IdentityContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3 } from '../../contexts/Web3Context';
 
 const CredentialManager = () => {
   const { credentials, getCredentials, loading, error } = useIdentity();
+  const { user } = useAuth();
+  const { account } = useWeb3();
   const [filteredCredentials, setFilteredCredentials] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);

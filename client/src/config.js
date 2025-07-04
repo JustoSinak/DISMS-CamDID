@@ -1,7 +1,5 @@
-const config = {
+export default {
   api: {
-    baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001'
+    baseUrl: process.env.REACT_APP_API_URL || 'https://disms-camdid.onrender.com'
   }
 };
-
-export default config;

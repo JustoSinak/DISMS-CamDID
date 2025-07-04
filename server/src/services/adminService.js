@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const AdminRegistry = require('../../../blockchain/build/contracts/AdminRegistry.json');
+const AdminRegistry = require('../../blockchain/build/contracts/AdminRegistry.json');
 const config = require('../config');
 const User = require('../models/User');
 const DidDocument = require('../models/DidDocument');

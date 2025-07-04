@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const DIDRegistryABI = require('../blockchain/build/contracts/DIDRegistry.json').abi;
+const DIDRegistryABI = require('../../blockchain/build/contracts/DIDRegistry.json').abi;
 
 const web3 = new Web3("http://localhost:8545"); // Ganache or testnet
 const contractAddress = "0x..."; // Replace with actual deployed contract address

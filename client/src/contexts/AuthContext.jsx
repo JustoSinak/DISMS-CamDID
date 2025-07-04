@@ -131,26 +131,11 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user from token
-  const loadUser = async () => {
-    try {
-      const response = await api.get('/auth/verify-token');
-      if (response.data.success) {
-        dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: response.data.user });
-      } else {
-        dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: null });
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-      dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: null });
-    }
-  };
-
   // Load user on app start if token exists
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = state.rememberMe
-        ? localStorage.getItem('camdid_token')
+      const token = state.rememberMe 
+        ? localStorage.getItem('camdid_token') 
         : sessionStorage.getItem('camdid_token');
 
       if (token) {
@@ -166,9 +151,29 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, [state.rememberMe]);
+  }, []);
 
-
+  // Load user from token
+  const loadUser = async () => {
+    try {
+      const response = await api.get('/auth/verify-token');
+      if (response.data.success) {
+        dispatch({
+          type: AUTH_ACTIONS.LOAD_USER,
+          payload: response.data.user
+        });
+      } else {
+        throw new Error('Failed to verify token');
+      }
+    } catch (error) {
+      console.error('Load user error:', error);
+      dispatch({
+        type: AUTH_ACTIONS.LOGIN_FAILURE,
+        payload: error.response?.data?.message || 'Failed to load user'
+      });
+      throw error;
+    }
+  };
 
   // Update user profile
   const updateUserProfile = async (profileData) => {

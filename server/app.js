@@ -56,17 +56,27 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/camdid_dev', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 30000, // Increased timeout to 30s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
       bufferCommands: false, // Disable mongoose buffering
     });
 
     console.log('✅ Connected to MongoDB');
     console.log(`📍 Database: ${conn.connection.name}`);
     console.log(`🌐 Host: ${conn.connection.host}:${conn.connection.port}`);
+
+    // Add mongoose connection event listeners for debugging
+    mongoose.connection.on('connected', () => {
+      console.log('Mongoose connected to DB');
+    });
+    mongoose.connection.on('error', (err) => {
+      console.error('Mongoose connection error:', err);
+    });
+    mongoose.connection.on('disconnected', () => {
+      console.warn('Mongoose disconnected');
+    });
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
+    console.error('❌ MongoDB connection error:', error);
     console.error('🔍 Connection string being used:', process.env.MONGO_URI ? 'Atlas URI (hidden for security)' : 'Local fallback');
     process.exit(1);
   }

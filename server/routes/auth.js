@@ -3,6 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
+const biometricRoutes = require('./biometric');
 const { check } = require('express-validator');
 const { roleAuth } = require('../middleware/roleAuth');
 
@@ -221,5 +222,33 @@ router.get('/verify-token', authenticateToken, (req, res) => {
 // @desc    Get current user
 // @access  Private
 router.get('/me', roleAuth('citizen', 'verifier', 'issuer'), authController.getMe);
+
+// @route   POST /api/auth/refresh
+// @desc    Refresh JWT token
+// @access  Private
+router.post('/refresh', authenticateToken, authController.refreshToken);
+
+// @route   POST /api/auth/logout
+// @desc    Logout user (invalidate token)
+// @access  Private
+router.post('/logout', authenticateToken, authController.logout);
+
+// @route   POST /api/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.post('/change-password',
+  authenticateToken,
+  [
+    check('currentPassword', 'Current password is required').notEmpty(),
+    check('newPassword', 'New password must be at least 6 characters').isLength({ min: 6 })
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one number')
+  ],
+  handleValidationErrors,
+  authController.changePassword
+);
+
+// Mount biometric routes
+router.use('/biometric', biometricRoutes);
 
 module.exports = router;

@@ -14,6 +14,9 @@ const issuerRoutes = require('./routes/issuer');
 const verifierRoutes = require('./routes/verifier');
 const adminRoutes = require('./routes/admin');
 const identityRoutes = require('./routes/identity');
+const userRoutes = require('./routes/user');
+const sharingRoutes = require('./routes/sharing');
+const verificationRoutes = require('./routes/verification');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -60,6 +63,9 @@ app.use('/api/issuer', issuerRoutes);
 app.use('/api/verifier', verifierRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/identity', identityRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/sharing', sharingRoutes);
+app.use('/api/verify', verificationRoutes);
 
 // Test endpoint
 app.get('/test', (req, res) => {

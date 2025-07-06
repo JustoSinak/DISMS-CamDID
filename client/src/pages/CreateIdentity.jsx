@@ -84,6 +84,9 @@ const CreateIdentity = () => {
   const [formErrors, setFormErrors] = useState({});
   const [previewIdCard, setPreviewIdCard] = useState(null);
   const [previewSelfie, setPreviewSelfie] = useState(null);
+  const [showIdCamera, setShowIdCamera] = useState(false);
+  const [showSelfieCamera, setShowSelfieCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -96,6 +99,15 @@ const CreateIdentity = () => {
       setError(web3Error);
     }
   }, [web3Error]);
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -169,6 +181,65 @@ const CreateIdentity = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const startCamera = async (type) => {
+    try {
+      const constraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: type === 'selfieImage' ? 'user' : 'environment'
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      setCameraStream(stream);
+
+      if (type === 'idCardImage') {
+        setShowIdCamera(true);
+      } else {
+        setShowSelfieCamera(true);
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setError('Unable to access camera. Please check permissions or use file upload instead.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowIdCamera(false);
+    setShowSelfieCamera(false);
+  };
+
+  const capturePhoto = (type) => {
+    const video = document.getElementById(`camera-${type}`);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], `${type}-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      // Process the captured image the same way as uploaded files
+      if (type === 'idCardImage') {
+        await processDocumentWithOCR(file);
+        setPreviewIdCard(canvas.toDataURL());
+        setFormData(prev => ({ ...prev, idCardImage: file }));
+      } else {
+        setPreviewSelfie(canvas.toDataURL());
+        setFormData(prev => ({ ...prev, selfieImage: file }));
+      }
+
+      stopCamera();
+    }, 'image/jpeg', 0.8);
   };
 
   const validateStep = (step) => {
@@ -564,71 +635,118 @@ const CreateIdentity = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload ID Card Image
+                ID Card Image
               </label>
-              <div
-                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${formData.idCardImage ? 'border-emerald-300' : 'border-gray-300'} border-dashed rounded-md relative cursor-pointer transition-colors duration-200 ease-in-out hover:border-emerald-400`}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleImageChange({ target: { files: [file] } }, 'idCardImage');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add('border-emerald-400');
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('border-emerald-400');
-                }}
-              >
-                <div className="space-y-1 text-center">
-                  {previewIdCard ? (
-                    <div className="relative">
-                      <img
-                        src={previewIdCard}
-                        alt="ID Card Preview"
-                        className="mx-auto h-32 w-auto"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreviewIdCard(null);
-                            setFormData(prev => ({ ...prev, idCardImage: null }));
-                          }}
-                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      {formData.idCardImage && (
-                        <div className="mt-2 flex items-center justify-center space-x-2">
-                          <Check className="w-5 h-5 text-emerald-500" />
-                          <span className="text-sm text-emerald-600">Document uploaded successfully</span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500">
-                          <span>Upload ID card</span>
-                          <input
-                            type="file"
-                            name="idCardImage"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={(e) => handleImageChange(e, 'idCardImage')}
-                          />
-                        </label>
-                      </div>
-                      <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                    </>
-                  )}
+
+              {showIdCamera ? (
+                <div className="relative bg-black rounded-md overflow-hidden">
+                  <video
+                    id="camera-idCardImage"
+                    ref={(video) => {
+                      if (video && cameraStream) {
+                        video.srcObject = cameraStream;
+                        video.play();
+                      }
+                    }}
+                    className="w-full h-64 object-cover"
+                    autoPlay
+                    playsInline
+                  />
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => capturePhoto('idCardImage')}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <Camera className="w-5 h-5 inline mr-2" />
+                      Capture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${formData.idCardImage ? 'border-emerald-300' : 'border-gray-300'} border-dashed rounded-md relative cursor-pointer transition-colors duration-200 ease-in-out hover:border-emerald-400`}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    handleImageChange({ target: { files: [file] } }, 'idCardImage');
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('border-emerald-400');
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-emerald-400');
+                  }}
+                >
+                  <div className="space-y-1 text-center">
+                    {previewIdCard ? (
+                      <div className="relative">
+                        <img
+                          src={previewIdCard}
+                          alt="ID Card Preview"
+                          className="mx-auto h-32 w-auto"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewIdCard(null);
+                              setFormData(prev => ({ ...prev, idCardImage: null }));
+                            }}
+                            className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        {formData.idCardImage && (
+                          <div className="mt-2 flex items-center justify-center space-x-2">
+                            <Check className="w-5 h-5 text-emerald-500" />
+                            <span className="text-sm text-emerald-600">Document uploaded successfully</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex justify-center space-x-4">
+                            <label className="cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 px-3 py-1 border border-emerald-600 hover:bg-emerald-50">
+                              <Upload className="w-4 h-4 inline mr-1" />
+                              <span>Upload File</span>
+                              <input
+                                type="file"
+                                name="idCardImage"
+                                className="sr-only"
+                                accept="image/*"
+                                onChange={(e) => handleImageChange(e, 'idCardImage')}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => startCamera('idCardImage')}
+                              className="cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 px-3 py-1 border border-emerald-600 hover:bg-emerald-50"
+                            >
+                              <Camera className="w-4 h-4 inline mr-1" />
+                              Take Photo
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500">Upload or take a photo of your ID card</p>
+                          <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               {formErrors.idCardImage && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.idCardImage}</p>
               )}
@@ -645,72 +763,118 @@ const CreateIdentity = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Take a Selfie
+                Selfie Photo
               </label>
-              <div
-                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${formData.selfieImage ? 'border-emerald-300' : 'border-gray-300'} border-dashed rounded-md relative cursor-pointer transition-colors duration-200 ease-in-out hover:border-emerald-400`}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  handleImageChange({ target: { files: [file] } }, 'selfieImage');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add('border-emerald-400');
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('border-emerald-400');
-                }}
-              >
-                <div className="space-y-1 text-center">
-                  {previewSelfie ? (
-                    <div className="relative">
-                      <img
-                        src={previewSelfie}
-                        alt="Selfie Preview"
-                        className="mx-auto h-32 w-auto"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreviewSelfie(null);
-                            setFormData(prev => ({ ...prev, selfieImage: null }));
-                          }}
-                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      {formData.selfieImage && (
-                        <div className="mt-2 flex items-center justify-center space-x-2">
-                          <Check className="w-5 h-5 text-emerald-500" />
-                          <span className="text-sm text-emerald-600">Selfie uploaded successfully</span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <Camera className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500">
-                          <span>Take a selfie</span>
-                          <input
-                            type="file"
-                            name="selfieImage"
-                            className="sr-only"
-                            accept="image/*"
-                            onChange={(e) => handleImageChange(e, 'selfieImage')}
-                            capture="user"
-                          />
-                        </label>
-                      </div>
-                      <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                    </>
-                  )}
+
+              {showSelfieCamera ? (
+                <div className="relative bg-black rounded-md overflow-hidden">
+                  <video
+                    id="camera-selfieImage"
+                    ref={(video) => {
+                      if (video && cameraStream) {
+                        video.srcObject = cameraStream;
+                        video.play();
+                      }
+                    }}
+                    className="w-full h-64 object-cover"
+                    autoPlay
+                    playsInline
+                  />
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => capturePhoto('selfieImage')}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <Camera className="w-5 h-5 inline mr-2" />
+                      Capture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${formData.selfieImage ? 'border-emerald-300' : 'border-gray-300'} border-dashed rounded-md relative cursor-pointer transition-colors duration-200 ease-in-out hover:border-emerald-400`}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    handleImageChange({ target: { files: [file] } }, 'selfieImage');
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('border-emerald-400');
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-emerald-400');
+                  }}
+                >
+                  <div className="space-y-1 text-center">
+                    {previewSelfie ? (
+                      <div className="relative">
+                        <img
+                          src={previewSelfie}
+                          alt="Selfie Preview"
+                          className="mx-auto h-32 w-auto"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewSelfie(null);
+                              setFormData(prev => ({ ...prev, selfieImage: null }));
+                            }}
+                            className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        {formData.selfieImage && (
+                          <div className="mt-2 flex items-center justify-center space-x-2">
+                            <Check className="w-5 h-5 text-emerald-500" />
+                            <span className="text-sm text-emerald-600">Selfie captured successfully</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <Camera className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex justify-center space-x-4">
+                            <label className="cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 px-3 py-1 border border-emerald-600 hover:bg-emerald-50">
+                              <Upload className="w-4 h-4 inline mr-1" />
+                              <span>Upload Photo</span>
+                              <input
+                                type="file"
+                                name="selfieImage"
+                                className="sr-only"
+                                accept="image/*"
+                                onChange={(e) => handleImageChange(e, 'selfieImage')}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => startCamera('selfieImage')}
+                              className="cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 px-3 py-1 border border-emerald-600 hover:bg-emerald-50"
+                            >
+                              <Camera className="w-4 h-4 inline mr-1" />
+                              Take Selfie
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500">Upload or take a selfie photo</p>
+                          <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               {formErrors.selfieImage && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.selfieImage}</p>
               )}

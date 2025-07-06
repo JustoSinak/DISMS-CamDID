@@ -134,15 +134,15 @@ export const AuthProvider = ({ children }) => {
   // Load user on app start if token exists
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = state.rememberMe 
-        ? localStorage.getItem('camdid_token') 
-        : sessionStorage.getItem('camdid_token');
+      // Check both localStorage and sessionStorage for token
+      const token = localStorage.getItem('camdid_token') || sessionStorage.getItem('camdid_token');
 
       if (token) {
         try {
+          // Set the token in axios defaults
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           await loadUser();
         } catch (error) {
-          console.error('Failed to load user:', error);
           dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: null });
         }
       } else {
@@ -157,6 +157,7 @@ export const AuthProvider = ({ children }) => {
   const loadUser = async () => {
     try {
       const response = await api.get('/auth/verify-token');
+
       if (response.data.success) {
         dispatch({
           type: AUTH_ACTIONS.LOAD_USER,
@@ -166,7 +167,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Failed to verify token');
       }
     } catch (error) {
-      console.error('Load user error:', error);
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: error.response?.data?.message || 'Failed to load user'
@@ -265,7 +265,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await api.post('/auth/login', loginData);
-      
+
       if (response.data.success) {
         // Verify that the user's role matches the requested role
         if (loginData.role && response.data.user.role !== loginData.role) {

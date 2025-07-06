@@ -70,10 +70,117 @@ const userSchema = new mongoose.Schema({
     enum: ['citizen', 'verifier', 'issuer'],
     required: [true, 'Role is required']
   },
+  // Biometric authentication settings
+  biometrics: {
+    fingerprint: {
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      registeredAt: Date,
+      lastUsed: Date,
+      failedAttempts: {
+        type: Number,
+        default: 0
+      }
+    },
+    face: {
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      registeredAt: Date,
+      lastUsed: Date,
+      failedAttempts: {
+        type: Number,
+        default: 0
+      }
+    },
+    voice: {
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      registeredAt: Date,
+      lastUsed: Date,
+      failedAttempts: {
+        type: Number,
+        default: 0
+      }
+    }
+  },
+  // Security settings
+  security: {
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false
+    },
+    biometricEnabled: {
+      type: Boolean,
+      default: false
+    },
+    backupCodes: [{
+      code: String,
+      used: {
+        type: Boolean,
+        default: false
+      },
+      usedAt: Date
+    }],
+    lastPasswordChange: Date,
+    passwordHistory: [String], // Store hashes of previous passwords
+    accountLocked: {
+      type: Boolean,
+      default: false
+    },
+    lockoutUntil: Date,
+    loginAttempts: {
+      type: Number,
+      default: 0
+    }
+  },
+  // User preferences
+  preferences: {
+    language: {
+      type: String,
+      enum: ['en', 'fr'],
+      default: 'en'
+    },
+    theme: {
+      type: String,
+      enum: ['light', 'dark', 'auto'],
+      default: 'light'
+    },
+    notifications: {
+      email: {
+        type: Boolean,
+        default: true
+      },
+      sms: {
+        type: Boolean,
+        default: false
+      },
+      push: {
+        type: Boolean,
+        default: true
+      }
+    },
+    privacy: {
+      shareActivity: {
+        type: Boolean,
+        default: false
+      },
+      allowAnalytics: {
+        type: Boolean,
+        default: true
+      }
+    }
+  },
   isActive: {
     type: Boolean,
     default: true
   },
+  lastLogin: Date,
   createdAt: {
     type: Date,
     default: Date.now
@@ -81,6 +188,50 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // DID and blockchain integration
+  did: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values while maintaining uniqueness
+  },
+  // API and integration settings
+  apiKeys: [{
+    keyId: String,
+    keyHash: String, // Hashed API key
+    name: String,
+    permissions: [String],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    lastUsed: Date,
+    active: {
+      type: Boolean,
+      default: true
+    }
+  }],
+  // Compliance and audit
+  compliance: {
+    gdprConsent: {
+      type: Boolean,
+      default: false
+    },
+    gdprConsentDate: Date,
+    dataRetentionPeriod: {
+      type: Number,
+      default: 2555 // 7 years in days
+    },
+    auditLog: [{
+      action: String,
+      timestamp: {
+        type: Date,
+        default: Date.now
+      },
+      ipAddress: String,
+      userAgent: String,
+      details: mongoose.Schema.Types.Mixed
+    }]
   }
 }, {
   timestamps: true,

@@ -10,7 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useWeb3 } from '../../contexts/Web3Context';
 
 const CredentialManager = () => {
-  const { credentials, getCredentials, loading, error } = useIdentity();
+  const identityContext = useIdentity();
   const { user } = useAuth();
   const { account } = useWeb3();
   const [filteredCredentials, setFilteredCredentials] = useState([]);
@@ -20,10 +20,20 @@ const CredentialManager = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedCredential, setSelectedCredential] = useState(null);
 
+  // Safely destructure from context
+  const {
+    credentials = [],
+    loading = false,
+    error = null,
+    loadCredentials
+  } = identityContext || {};
+
   useEffect(() => {
-    // Fetch credentials when component mounts
-    getCredentials();
-  }, [getCredentials]);
+    // Load credentials when component mounts
+    if (loadCredentials) {
+      loadCredentials();
+    }
+  }, [loadCredentials]);
 
   useEffect(() => {
     // Filter credentials based on search term
@@ -40,7 +50,9 @@ const CredentialManager = () => {
 
   const handleRevokeCredential = async (credentialId) => {
     try {
-      await getCredentials();
+      if (loadCredentials) {
+        await loadCredentials();
+      }
     } catch (error) {
       console.error('Error revoking credential:', error);
     }
@@ -58,6 +70,20 @@ const CredentialManager = () => {
       console.error('Error viewing credential:', error);
     }
   };
+
+  // Show error if context is not available
+  if (!identityContext) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Credentials</h2>
+          <div className="text-red-600 bg-red-50 border border-red-200 rounded-md p-4">
+            <p>Identity context is not available. Please ensure you are logged in and try again.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

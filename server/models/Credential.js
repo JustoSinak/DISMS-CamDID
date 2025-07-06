@@ -129,6 +129,44 @@ const CredentialSchema = new Schema({
   revokedAt: {
     type: Date,
     required: false
+  },
+  // Enhanced fields for PRD compliance
+  schemaVersion: {
+    type: String,
+    default: '1.0'
+  },
+  credentialSubject: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  },
+  proof: {
+    type: String, // JSON string of cryptographic proof
+    required: false
+  },
+  revocationRegistry: {
+    registryId: String,
+    revocationIndex: Number,
+    revoked: {
+      type: Boolean,
+      default: false
+    },
+    revokedAt: Date,
+    revocationReason: String
+  },
+  compliance: {
+    gdprCompliant: {
+      type: Boolean,
+      default: true
+    },
+    dataClassification: {
+      type: String,
+      enum: ['public', 'internal', 'confidential', 'restricted'],
+      default: 'confidential'
+    },
+    retentionPeriod: {
+      type: Number,
+      default: 2555 // 7 years in days
+    }
   }
 });
 

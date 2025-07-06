@@ -1,5 +1,5 @@
 // identity-blockchain-app/client/src/components/auth/Login.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
@@ -30,7 +30,9 @@ const Login = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Login useEffect - isAuthenticated:', isAuthenticated, 'role:', role);
     if (isAuthenticated) {
+      console.log('Already authenticated, redirecting to:', `/dashboard/${role}`);
       navigate(`/dashboard/${role}`);
     }
   }, [isAuthenticated, navigate, role]);
@@ -88,18 +90,22 @@ const Login = () => {
         ...formData,
         role: role // Add role from URL params
       };
-      
+
+      console.log('Attempting login with data:', loginData);
       const result = await login(loginData);
+      console.log('Login result:', result);
+
       if (result && result.success) {
         setSuccess('Login successful! Redirecting to dashboard...');
-        // Add a small delay to show the success message
-        setTimeout(() => {
-          navigate(`/dashboard/${role}`);
-        }, 1500);
+        console.log('Login successful, redirecting to:', `/dashboard/${role}`);
+        // Immediate redirect after successful login
+        navigate(`/dashboard/${role}`);
       } else {
+        console.log('Login failed:', result);
         setFormErrors({ general: result.message || 'Login failed. Please try again.' });
       }
     } catch (err) {
+      console.error('Login error:', err);
       setFormErrors({ general: err.message || 'Login failed. Please try again.' });
     }
   };
@@ -121,7 +127,13 @@ const Login = () => {
 
           {success && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              {success}
+              <p>{success}</p>
+              <button
+                onClick={() => navigate(`/dashboard/${role}`)}
+                className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Go to Dashboard Manually
+              </button>
             </div>
           )}
 

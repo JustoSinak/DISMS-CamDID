@@ -288,6 +288,91 @@ const updateProfile = async (req, res) => {
   res.status(501).json({ success: false, message: 'Update profile not implemented' });
 };
 
+// @desc    Refresh JWT token
+// @route   POST /api/auth/refresh
+// @access  Private
+const refreshToken = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Generate new token
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error refreshing token'
+    });
+  }
+};
+
+// @desc    Change user password
+// @route   POST /api/auth/change-password
+// @access  Private
+const changePassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error changing password'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -297,5 +382,7 @@ module.exports = {
   getMe,
   verifyEmail,
   forgotPassword,
-  updateProfile
+  updateProfile,
+  refreshToken,
+  changePassword
 };

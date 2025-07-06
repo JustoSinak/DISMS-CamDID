@@ -1,25 +1,85 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "DISMS",
+  "name": "Digital Identity & Sovereign Management System",
+  "description": "Cameroon's blockchain-based digital identity management platform for secure, verifiable credentials",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "CamDID.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "maskable any"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#10b981",
+  "background_color": "#ffffff",
+  "categories": ["government", "identity", "security", "blockchain"],
+  "lang": "en",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Credential",
+      "short_name": "Create",
+      "description": "Create a new digital credential",
+      "url": "/create-credential",
+      "icons": [
+        {
+          "src": "icon-create.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Verify Credential",
+      "short_name": "Verify",
+      "description": "Verify a digital credential",
+      "url": "/verify",
+      "icons": [
+        {
+          "src": "icon-verify.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Identity",
+      "short_name": "Identity",
+      "description": "View and manage your digital identity",
+      "url": "/my-identity",
+      "icons": [
+        {
+          "src": "icon-identity.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
 }

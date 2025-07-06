@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import { Web3Provider } from './contexts/Web3Context';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { IdentityProvider } from './contexts/IdentityContext';
 
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
@@ -23,12 +24,14 @@ import VerifierDashboard from './components/dashboard/VerifierDashboard';
 import ChooseCredentialType from './pages/ChooseCredentialType';
 import CreateIdentity from './pages/CreateIdentity';
 import CreateCredential from './pages/citizen/CreateCredential';
-import ManageCredentials from './pages/ManageCredentials';
+import ManageCredentials from './pages/ManageCredentials.js';
 import MyIdentity from './pages/MyIdentity';
-import ShareIdentity from './pages/ShareIdentity';
+import ShareIdentity from './pages/ShareIdentity.js';
 import Settings from './pages/Settings';
 import WalletPage from './pages/WalletPage';
 import Credentials from './pages/citizen/Credentials';
+import ShareCredential from './pages/ShareCredential';
+import VerificationRequest from './pages/VerificationRequest';
 
 const withLayout = (Component) => (props) => (
   <Layout>
@@ -41,7 +44,8 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Web3Provider>
-          <Router>
+          <IdentityProvider>
+            <Router>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={withLayout(Home)()} />
@@ -69,6 +73,9 @@ function App() {
               <Route path="/manage-credentials" element={<PrivateRoute>{withLayout(ManageCredentials)()}</PrivateRoute>} />
               <Route path="/my-identity" element={<PrivateRoute>{withLayout(MyIdentity)()}</PrivateRoute>} />
               <Route path="/share-identity" element={<PrivateRoute>{withLayout(ShareIdentity)()}</PrivateRoute>} />
+              <Route path="/share-credential" element={<PrivateRoute>{withLayout(ShareCredential)()}</PrivateRoute>} />
+              <Route path="/share-credential/:credentialId" element={<PrivateRoute>{withLayout(ShareCredential)()}</PrivateRoute>} />
+              <Route path="/verification-request/:requestId" element={<PrivateRoute>{withLayout(VerificationRequest)()}</PrivateRoute>} />
 
               {/* Settings & Wallet */}
               <Route path="/settings" element={<PrivateRoute>{withLayout(Settings)()}</PrivateRoute>} />
@@ -83,6 +90,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>
+          </IdentityProvider>
         </Web3Provider>
       </AuthProvider>
     </ThemeProvider>

@@ -40,6 +40,26 @@ export const IdentityProvider = ({ children }) => {
     }
   };
 
+  const loadCredentials = async () => {
+    try {
+      setLoading(true);
+      if (identity) {
+        const creds = await apiService.getCredentials(identity);
+        setCredentials(creds);
+      } else if (account) {
+        const did = await apiService.resolveDID(account);
+        const creds = await apiService.getCredentials(did);
+        setIdentity(did);
+        setCredentials(creds);
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error('Error loading credentials: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createIdentity = async (credentialData) => {
     try {
       setLoading(true);
@@ -283,6 +303,7 @@ export const IdentityProvider = ({ children }) => {
         credentials,
         loading,
         error,
+        loadCredentials,
         createIdentity,
         issueCredential,
         revokeCredential,
@@ -297,7 +318,7 @@ export const IdentityProvider = ({ children }) => {
 
 export const useIdentity = () => {
   const context = useContext(IdentityContext);
-  if (context === undefined) {
+  if (context === undefined || context === null) {
     throw new Error('useIdentity must be used within an IdentityProvider');
   }
   return context;
